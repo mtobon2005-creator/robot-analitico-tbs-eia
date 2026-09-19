@@ -129,14 +129,14 @@ def _render_access_gate(conn) -> None:
     Dos controles SEPARADOS y NO premarcados (sección 3.3): privacidad
     y disclaimer. Solo al aceptar ambos se habilita el login OIDC.
     """
-    st.subheader("Disclaimer académico")
+    st.header("Disclaimer académico")
     st.info(DISCLAIMER_TEXT)
     st.caption(f"Versión del disclaimer: {DISCLAIMER_VERSION}")
     disclaimer_ok = st.checkbox(
         "He leído y acepto el disclaimer académico.", key="cb_disclaimer"
     )
 
-    st.subheader("Aviso de privacidad")
+    st.header("Aviso de privacidad")
     st.info(PRIVACY_NOTICE_TEXT)
     st.caption(f"Versión del aviso de privacidad: {PRIVACY_NOTICE_VERSION}")
     privacy_ok = st.checkbox(
@@ -262,7 +262,7 @@ def _guard(conn) -> bool:
 def _render_ticker_collection() -> list[str]:
     """RF-03: colección dinámica de tickers. Devuelve la colección
     actual (lista de strings normalizados)."""
-    st.subheader("Selección de activos")
+    st.header("Selección de activos")
     collection: list[str] = st.session_state.setdefault("ticker_collection", [])
 
     with st.form(key="add_ticker_form", clear_on_submit=True):
@@ -326,7 +326,7 @@ def _render_ticker_collection() -> list[str]:
 
 def _render_date_frequency_horizon() -> None:
     """RF-04: fechas, frecuencia y horizonte H (libre, no solo botones)."""
-    st.subheader("Fechas, frecuencia y horizonte")
+    st.header("Fechas, frecuencia y horizonte")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -427,7 +427,7 @@ def _get_yfinance_provider():
 def _render_data_fetch(collection: list[str]) -> None:
     """RF-05 a RF-08: descarga (fixture o Yahoo Finance, a elección),
     limpieza, remuestreo y aislamiento de fallos parciales."""
-    st.subheader("Descarga y calidad de datos")
+    st.header("Descarga y calidad de datos")
 
     date_config = st.session_state.get("date_config")
     horizon_config = st.session_state.get("horizon_config")
@@ -509,7 +509,7 @@ def _render_data_fetch(collection: list[str]) -> None:
 def _render_historical_analysis() -> None:
     """RF-09 a RF-12: gráficos, rendimientos logarítmicos, descriptivos
     y contexto del presente (drawdown, percentil, ventana reciente)."""
-    st.subheader("Análisis histórico")
+    st.header("Análisis histórico")
 
     result: FetchResult | None = st.session_state.get("fetch_result")
     date_config = st.session_state.get("date_config")
@@ -534,10 +534,20 @@ def _render_historical_analysis() -> None:
     st.markdown(f"**Precio vs. tiempo — {ticker}**")
     st.caption(caption)
     st.line_chart(prices, use_container_width=True)
+    with st.expander("Ver datos de precio en tabla (alternativa accesible al gráfico)"):
+        st.dataframe(
+            prices.rename("Precio").reset_index().rename(columns={"index": "Fecha"}),
+            use_container_width=True, hide_index=True,
+        )
 
     st.markdown(f"**Log-rendimiento vs. tiempo — {ticker}**")
     st.caption(caption)
     st.line_chart(returns, use_container_width=True)
+    with st.expander("Ver datos de rendimiento en tabla (alternativa accesible al gráfico)"):
+        st.dataframe(
+            returns.rename("Log-rendimiento").reset_index().rename(columns={"index": "Fecha"}),
+            use_container_width=True, hide_index=True,
+        )
 
     # RF-10: ecuación única de rendimiento (nunca simple).
     st.caption(f"Ecuación de rendimiento (única admitida): g_t = ln(Pₜ / Pₜ₋₁)")
@@ -555,7 +565,13 @@ def _render_historical_analysis() -> None:
     )
 
     with st.expander("Serie de drawdown completa"):
-        st.line_chart(compute_drawdown_series(prices), use_container_width=True)
+        drawdown_series = compute_drawdown_series(prices)
+        st.line_chart(drawdown_series, use_container_width=True)
+        with st.expander("Ver drawdown en tabla (alternativa accesible al gráfico)"):
+            st.dataframe(
+                drawdown_series.rename("Drawdown").reset_index().rename(columns={"index": "Fecha"}),
+                use_container_width=True, hide_index=True,
+            )
 
     # RF-11: estadísticas descriptivas (periodo y anualizadas).
     stats_ = descriptive_stats(returns, frequency)
@@ -603,7 +619,7 @@ def _render_historical_analysis() -> None:
 def _render_forecasting() -> None:
     """RF-13 a RF-15: forecasting homocedástico multihorizonte y
     validación walk-forward."""
-    st.subheader("Forecasting homocedástico")
+    st.header("Forecasting homocedástico")
 
     result: FetchResult | None = st.session_state.get("fetch_result")
     date_config = st.session_state.get("date_config")
@@ -657,6 +673,10 @@ def _render_forecasting() -> None:
             }
         ).set_index("h")
         st.line_chart(chart_df, use_container_width=True)
+        with st.expander(
+            f"Ver trayectoria del Modelo {modelo} en tabla (alternativa accesible al gráfico)"
+        ):
+            st.dataframe(chart_df.reset_index(), use_container_width=True, hide_index=True)
 
         terminal = trajectory[-1]
         col1, col2, col3, col4 = st.columns(4)
@@ -693,7 +713,7 @@ def _render_forecasting() -> None:
 def _render_risk_and_levels() -> None:
     """RF-16 a RF-18: VaR paramétrico, niveles de entrada/SL/TP y
     probabilidades terminales para la posición larga obligatoria."""
-    st.subheader("Riesgo, niveles de decisión y probabilidades")
+    st.header("Riesgo, niveles de decisión y probabilidades")
 
     result: FetchResult | None = st.session_state.get("fetch_result")
     date_config = st.session_state.get("date_config")
@@ -828,7 +848,7 @@ def _render_risk_and_levels() -> None:
 def _render_comparison_and_export() -> None:
     """RF-19 a RF-22: mapa histórico rendimiento-riesgo, dominancia,
     regla de preselección y exportación."""
-    st.subheader("Comparación de activos y exportación")
+    st.header("Comparación de activos y exportación")
 
     result: FetchResult | None = st.session_state.get("fetch_result")
     date_config = st.session_state.get("date_config")
@@ -1003,7 +1023,7 @@ def _render_authenticated_view(conn) -> None:
     _render_comparison_and_export()
 
     st.divider()
-    st.subheader("Núcleo obligatorio: RF-01 a RF-22 completos")
+    st.header("Núcleo obligatorio: RF-01 a RF-22 completos")
     st.write(
         "Falta cerrar la infraestructura no cubierta por la interfaz "
         "(lifecycle_worker de purga, RNF-01 a RNF-05) y la documentación "

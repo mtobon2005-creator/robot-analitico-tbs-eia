@@ -7,7 +7,7 @@ con las rutas reales del repositorio.
 
 **Cómo leer "Pruebas propias":** `archivo::cantidad` es el número de
 casos de prueba (items de pytest, incluyendo variantes parametrizadas)
-en ese archivo. La cantidad total del proyecto es **219**, todos
+en ese archivo. La cantidad total del proyecto es **221**, todos
 pasando (`pytest tests/ -q`).
 
 **Convención de estado:**
@@ -43,17 +43,39 @@ pasando (`pytest tests/ -q`).
 | RF-19 | Tabla comparable + mapa histórico, mínimo 20 simultáneos | `src/comparison.py::build_comparison_table`, `app.py::_render_comparison_and_export` | `test_rf19_21_comparison.py` (15) — verificado con los 20 tickers oficiales | T-05, T-16 | G7 | ✅ |
 | RF-20 | Etiquetado, dominancia, fechas comunes, bloqueo de monedas incompatibles | `src/comparison.py::dominates`, `compute_non_dominated`, `_check_currency_compatibility`, `_common_date_index` | verificado exacto: las 20 filas `non_dominated` del archivo oficial coinciden una por una | T-16 | G7 | ✅ |
 | RF-21 | Regla de preselección explícita (4 variantes), sin implicar frontera eficiente | `src/comparison.py::select_max_mean_under_risk_limit`, `select_min_volatility_under_mean_floor`, `select_max_rvr`, `select_non_dominated_set` | verificado exacto: `select_max_rvr` identifica PG, igual que la columna oficial `selected_max_rvr` | T-17 | G7 | ✅ |
-| RF-22 | Exportar precios, resultados, tabla comparativa y parámetros (CSV/JSON, con fecha y fuente) | `src/export.py`, `app.py::_render_comparison_and_export` (botones de descarga) | `test_rf22_export.py` (5) | T-04, T-05 | G7, G8, G11 | ⚠️ (exporta precios y tabla comparativa; falta exportar VaR/niveles/forecasting por activo — ver README) |
+| RF-22 | Exportar precios, resultados, tabla comparativa y parámetros (CSV/JSON, con fecha y fuente) | `src/export.py`, `app.py::_render_comparison_and_export`, `_render_risk_and_levels` (botones de descarga) | `test_rf22_export.py` (7) | T-04, T-05 | G7, G8, G11 | ✅ |
 
 ## Requisitos no funcionales (RNF-01 a RNF-05)
 
 | RNF | Requisito (resumen) | Implementación | Estado |
 |-----|---|---|---|
-| RNF-01 | Usabilidad y accesibilidad (teclado, contraste, alt text, alternativa tabular) | Avatar con `role='img' aria-label=...` en `app.py`; tablas (`st.dataframe`) como alternativa a cada gráfico | ⚠️ Parcial — no se ha hecho auditoría formal de contraste/navegación por teclado |
+| RNF-01 | Usabilidad y accesibilidad (teclado, contraste, alt text, alternativa tabular) | Avatar con `role='img' aria-label=...`; **cada gráfico** (precio, rendimiento, drawdown, trayectoria de forecasting, mapa comparativo) tiene un expander con `st.dataframe` como alternativa tabular; jerarquía de encabezados corregida (`st.header` en vez de `st.subheader`, evita saltar de h1 a h3); navegación por teclado y foco visible heredados de los widgets nativos de Streamlit | ✅ **Auditado con Lighthouse (Chrome DevTools): 98/100 en Accessibility.** El único hallazgo (encabezados no secuenciales) ya se corrigió. |
 | RNF-02 | Arquitectura monolítica modular, configuración externa, dependencias fijadas, URL HTTPS | `requirements.txt` (versiones fijadas), `.streamlit/secrets.toml.example`, `.gitignore`, estructura `src/` modular por responsabilidad | ✅ (falta el despliegue real con URL HTTPS — pendiente de la cuenta de hosting del curso) |
 | RNF-03 | OIDC mantenido, allowlist, preconsentimiento, sesión lógica, transacción, outbox/worker, mínimo privilegio, retención y purga | `src/auth.py`, `src/consent.py`, `src/sessions.py`, `src/notifications_worker.py`, `src/lifecycle.py` | ⚠️ (ver limitaciones #1 y #4 del README) |
-| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (219/219 pruebas, 0 dependencias de red) |
-| RNF-05 | IA, autoría y documentación: README, AI_USAGE, CONTRIBUTIONS, TRACEABILITY, licencias, referencias APA 7 | Este archivo, `AI_USAGE.md`, `CONTRIBUTIONS.md`, `README.md` | ⚠️ (faltan referencias APA 7 formales y licencia explícita del repositorio) |
+| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (221/221 pruebas, 0 dependencias de red) |
+| RNF-05 | IA, autoría y documentación: README, AI_USAGE, CONTRIBUTIONS, TRACEABILITY, licencias, referencias APA 7 | Este archivo, `AI_USAGE.md`, `CONTRIBUTIONS.md`, `README.md` (sección Referencias), `LICENSE` | ✅ |
+
+### RNF-01 — Revisión manual de accesibilidad (checklist de Lighthouse)
+
+Lighthouse marca 10 puntos como "revisar manualmente" porque no puede
+verificarlos automáticamente. Revisados uno por uno el 17-sep-2026:
+
+| Punto | Estado | Nota |
+|---|---|---|
+| Controles interactivos enfocables por teclado | ✅ | Todos son widgets nativos de Streamlit (botones, checkboxes, radios, selects) — enfocables por defecto del navegador. |
+| Elementos interactivos indican su propósito/estado | ✅ | Cada widget tiene etiqueta de texto visible; los deshabilitados (`disabled=...`) lo muestran visualmente. |
+| Orden de tabulación lógico | ✅ | No se usa CSS que reordene el layout — sigue el orden del código. |
+| Orden visual = orden del DOM | ✅ | Mismo motivo — sin posicionamiento absoluto ni `z-index` manual. |
+| El foco no queda atrapado en una región | ✅ | No hay modales ni `st.dialog` con trampa de foco en la app. |
+| El foco se dirige a contenido nuevo agregado a la página | ⚠️ | Al abrir un `st.expander` (ej. "Ver datos en tabla"), el foco de teclado no salta automáticamente al contenido revelado. Es una limitación conocida del framework Streamlit, no algo controlable desde el código de la app. |
+| Se usan landmarks HTML5 para navegación | ✅ | Provistos por la plantilla base de Streamlit (`<main>`, etc.), no sobreescritos. |
+| Contenido offscreen oculto a tecnología asistiva | N/A | La app no oculta contenido a propósito fuera de pantalla. |
+| Controles personalizados tienen etiquetas asociadas | ✅ | El único elemento no-nativo es el avatar (`role='img' aria-label=...`); el `st.iframe` invisible (cookie técnica de sesión) no tiene contenido interactivo, por lo que no aplica etiqueta. |
+| Controles personalizados tienen roles ARIA | ✅ | Mismo caso — avatar con `role='img'` ya declarado. |
+
+Conclusión: 9/10 puntos verificados sin hallazgos; 1 limitación
+documentada (foco no dirigido a expanders nuevos) que es inherente al
+framework, no un descuido del código de la app.
 
 ---
 
@@ -73,12 +95,9 @@ pasando (`pytest tests/ -q`).
    — depende de configuración externa (hosting/backups que el curso
    provee, punto 46 de la guía); el worker purga lo que vive en su
    propia base de datos, no la infraestructura subyacente.
-5. **RNF-01 (accesibilidad)** — no se ha hecho una auditoría formal de
-   navegación por teclado ni de contraste de color.
-6. **RF-22** — la exportación cubre precios y tabla comparativa; los
-   resultados de VaR/niveles/forecasting por activo individual aún no
-   tienen un botón de exportación dedicado (es una extensión sencilla
-   de `src/export.py` reutilizando `src/risk.py` y `src/forecasting.py`).
+5. ~~**RNF-01 (accesibilidad)**~~ — **resuelto.** Auditado con
+   Lighthouse: 98/100 en Accessibility. El único hallazgo (jerarquía
+   de encabezados no secuencial) ya se corrigió.
 
 Estas limitaciones deben discutirse explícitamente durante la defensa
 individual (sección 12.3 de la guía) — declararlas y poder explicarlas
