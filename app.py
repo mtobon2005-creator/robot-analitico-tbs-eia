@@ -7,6 +7,14 @@ consentimientos, auditoría, outbox de notificación).
 Pendiente: RF-03 en adelante (tickers, fechas, analítica, forecasting,
 VaR, comparación, exportación) y el lifecycle_worker de purga.
 """
+import sys
+import os
+
+# Agrega la carpeta raíz al PATH de Python
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Ahora realiza tus imports normales
+from src.analytics import ...
 import streamlit as st
 import altair as alt
 import pandas as pd
@@ -194,6 +202,17 @@ def _finalize_login_if_needed(conn) -> None:
         return  # ya finalizado en un rerun anterior
 
     claims = dict(st.user)
+
+    # Si ya existe una sesión activa para esta identidad (ej. el
+    # navegador recargó la página estando ya autenticado — Streamlit
+    # pierde session_state en cualquier recarga completa, no solo en
+    # el redirect OIDC), la retomamos en vez de exigir login de nuevo.
+    existing = auth.find_active_session_for_claims(conn, claims)
+    if existing:
+        st.session_state["session_id"] = existing["session_id"]
+        st.session_state["user_id"] = existing["user_id"]
+        return
+
     iss = claims.get("iss", "")
     provider = "microsoft" if "microsoftonline" in iss else "google"
     flow_id = st.context.cookies.get(_FLOW_COOKIE_NAME)

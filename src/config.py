@@ -25,11 +25,9 @@ class AppIdentity:
 
 # --- EDITAR AQUÍ cuando se conforme el equipo (3-4 integrantes, punto 1.1 de la guía) ---
 APP_IDENTITY = AppIdentity(
-    team_name="Equipo pendiente de conformar",
+    team_name="Mariana Tobón H",
     members=(
-        TeamMember(name="Integrante 1 (pendiente)"),
-        TeamMember(name="Integrante 2 (pendiente)"),
-        TeamMember(name="Integrante 3 (pendiente)"),
+        TeamMember(name="Integrante 1 (Mariana Tobón H)")
     ),
     system_name="Robot Analítico TBS-EIA",
     version="0.1.0",

@@ -40,9 +40,9 @@ los 3-4 integrantes reales del equipo, y que cada quien:
 
 ## Registro de commits (llenar con el historial real de Git)
 
-| Fecha | Integrante | Commit | Descripción |
-|---|---|---|---|
-| *(pendiente)* | *(pendiente)* | *(pendiente)* | Repositorio inicial generado con asistencia de IA |
+| Integrante | Commit | Descripción |
+|Mariana Tobón H|---|---|
+| *(pendiente)* |  Repositorio inicial generado con asistencia de IA |
 
 ---
 

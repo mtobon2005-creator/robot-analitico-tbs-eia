@@ -25,7 +25,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 14 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 14 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Construir el esqueleto del repositorio y el módulo de identidad/disclaimer desde cero |
 | Prompt (resumen) | "Empecemos de 0" tras compartir la guía evaluativa y los fixtures oficiales; se acordó Streamlit como framework por su soporte nativo de OIDC (`st.login`) |
@@ -38,7 +38,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 14 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 14 sep 2026 · Mariana Tobon H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Implementar autenticación OIDC real (Google/Microsoft), preconsentimiento, sesión lógica, auditoría inmutable y outbox de notificación |
 | Prompt (resumen) | "Vale, vamos con RF-02" — se pidió dividir en piezas: base de datos, preconsentimiento, auth/sesión, auditoría, notificaciones |
@@ -51,7 +51,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 14 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 14 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Colección dinámica de tickers y configuración de fechas/frecuencia/horizonte H libre |
 | Prompt (resumen) | "va rf-04" tras completar RF-03 en el turno anterior |
@@ -64,7 +64,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 15 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 15 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Proveedor de datos (fixture + mock + yfinance), limpieza de precios, remuestreo antes de rendimientos, aislamiento de fallos parciales |
 | Prompt (resumen) | Continuación secuencial del plan RF por RF |
@@ -77,7 +77,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 15 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 15 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Rendimientos logarítmicos, estadísticas descriptivas anualizadas, drawdown, percentil midrank |
 | Prompt (resumen) | Continuación secuencial |
@@ -90,7 +90,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 15 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 15 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Modelo A/B homocedásticos, trayectoria analítica 1..H, validación walk-forward de 10 orígenes |
 | Prompt (resumen) | Continuación secuencial |
@@ -103,7 +103,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 16 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 16 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | VaR paramétrico, stop-loss/take-profit con costos, precio de equilibrio, probabilidades terminales |
 | Prompt (resumen) | Continuación secuencial |
@@ -116,7 +116,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 16 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 16 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Mapa histórico rendimiento-riesgo, dominancia, 4 reglas de preselección, exportación CSV/JSON |
 | Prompt (resumen) | Continuación secuencial |
@@ -129,7 +129,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 16 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 16 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Revocación inmediata, purga programada al cierre del curso, worker periódico, deletion markers sin PII |
 | Prompt (resumen) | "Yo iría por el lifecycle_worker primero" (decisión conjunta sobre el orden de trabajo restante) |
@@ -142,7 +142,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 16 sep 2026 · equipo pendiente de asignar integrante |
+| Fecha y responsable | 16 sep 2026 · Mariana Tobón H |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | TRACEABILITY.md, AI_USAGE.md (este archivo), CONTRIBUTIONS.md |
 | Prompt (resumen) | "sigamos" tras completar el núcleo funcional y el lifecycle_worker |

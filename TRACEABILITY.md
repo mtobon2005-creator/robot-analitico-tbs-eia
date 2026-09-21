@@ -77,6 +77,15 @@ Conclusión: 9/10 puntos verificados sin hallazgos; 1 limitación
 documentada (foco no dirigido a expanders nuevos) que es inherente al
 framework, no un descuido del código de la app.
 
+**Segunda corrida de Lighthouse, ya autenticado (pantallas con
+`st.date_input`): 94/100.** El único hallazgo automático — "[aria-*]
+attributes do not match their roles" sobre `data-testid="stDateInputField"`
+— vive dentro del HTML que el propio Streamlit genera internamente
+para su widget nativo de selección de fecha, no en código de este
+proyecto. No es corregible desde `app.py` sin parchear el framework;
+se documenta como limitación de terceros heredada, no como un defecto
+propio.
+
 ---
 
 ## Resumen de limitaciones conocidas (ver también README.md)

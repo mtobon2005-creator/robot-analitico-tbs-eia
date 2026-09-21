@@ -23,8 +23,8 @@ APP_VERSION = APP_IDENTITY.version
 # usuario ya se autenticó. EDITAR con las cuentas ficticias reales del
 # curso antes de desplegar.
 ALLOWLISTED_TEST_EMAILS: set[str] = {
+     "pruebarobot6@gmail.com",
      "mtobon2005@gmail.com",
-    # "cuenta.prueba2@outlook.com",
 }
 
 
@@ -143,3 +143,30 @@ def complete_login(
         )
 
     return {"user_id": user_id, "session_id": session_id}
+
+
+def find_active_session_for_claims(conn: sqlite3.Connection, claims: dict) -> dict | None:
+    """Busca una sesión ya activa para esta identidad (issuer, subject).
+
+    Necesario porque un simple refresh del navegador (o, por ejemplo,
+    la auditoría de Lighthouse, que recarga la página para analizarla)
+    reinicia `st.session_state` igual que el redirect OIDC completo —
+    pero la cookie de identidad de Streamlit (`st.user`) sigue siendo
+    válida. Sin esta función, cada refresh intentaría repetir todo el
+    flujo de login exigiendo un preconsentimiento que ya no existe,
+    mostrando un error confuso de 'sesión cerrada' cuando en realidad
+    el usuario nunca cerró sesión — solo recargó la página."""
+    issuer, subject = claims.get("iss"), claims.get("sub")
+    if not issuer or not subject:
+        return None
+
+    row = conn.execute(
+        "SELECT p.user_id AS user_id, s.session_id AS session_id "
+        "FROM profiles p JOIN app_sessions s ON s.user_id = p.user_id "
+        "WHERE p.issuer = ? AND p.subject = ? AND s.status = 'active'",
+        (issuer, subject),
+    ).fetchone()
+
+    if row is None:
+        return None
+    return {"user_id": row["user_id"], "session_id": row["session_id"]}

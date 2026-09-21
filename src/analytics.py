@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy import stats
 
 from src.config import FRECUENCIAS
 
