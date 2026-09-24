@@ -14,7 +14,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Ahora realiza tus imports normales
-from src.analytics import funcion_uno, funcion_dos, funcion_tres
 import streamlit as st
 import altair as alt
 import pandas as pd
