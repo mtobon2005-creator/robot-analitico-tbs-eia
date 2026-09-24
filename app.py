@@ -7,6 +7,16 @@ consentimientos, auditoría, outbox de notificación).
 Pendiente: RF-03 en adelante (tickers, fechas, analítica, forecasting,
 VaR, comparación, exportación) y el lifecycle_worker de purga.
 """
+<<<<<<< HEAD
+=======
+import sys
+import os
+
+# Agrega la carpeta raíz al PATH de Python
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Ahora realiza tus imports normales
+>>>>>>> 8fc636ccd8b380fe4b2c52c52f5f5c58268ab166
 import streamlit as st
 import altair as alt
 import pandas as pd
