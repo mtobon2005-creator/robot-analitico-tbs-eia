@@ -7,14 +7,6 @@ consentimientos, auditoría, outbox de notificación).
 Pendiente: RF-03 en adelante (tickers, fechas, analítica, forecasting,
 VaR, comparación, exportación) y el lifecycle_worker de purga.
 """
-import sys
-import os
-
-# Agrega la carpeta raíz al PATH de Python
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Ahora realiza tus imports normales
-from src.analytics import funcion_uno, funcion_dos, funcion_tres
 import streamlit as st
 import altair as alt
 import pandas as pd
@@ -169,29 +161,14 @@ def _render_access_gate(conn) -> None:
             _start_login(conn, provider="microsoft")
 
 
-_FLOW_COOKIE_NAME = "tbs_flow_id"
-
-
 def _start_login(conn, provider: str) -> None:
-    """Emite el preconsent_flow y lo guarda en una COOKIE REAL del
-    navegador (no en st.session_state).
+    """Redirige al proveedor OIDC elegido.
 
-    Motivo (limitación descubierta y documentada): el redirect a
-    Google/Microsoft es una recarga completa de página del navegador,
-    no una actualización interna de Streamlit. st.session_state NO
-    sobrevive ese viaje de ida y vuelta (queda vacío al regresar),
-    aunque st.user.is_logged_in sí se restaura correctamente (usa su
-    propio mecanismo de cookie firmada). Una cookie de navegador
-    corriente, en cambio, si sobrevive la recarga completa — por eso
-    la usamos aquí en vez de session_state."""
-    flow_id = issue_preconsent_flow(
-        conn, disclaimer_version=DISCLAIMER_VERSION, privacy_version=PRIVACY_NOTICE_VERSION
-    )
-    st.iframe(
-        f"<script>document.cookie = '{_FLOW_COOKIE_NAME}={flow_id}; "
-        "path=/; max-age=900; SameSite=Lax';</script>",
-        height=1,
-    )
+    Ya NO emite el preconsent_flow aquí (ver docstring de
+    _finalize_login_if_needed): ni session_state ni una cookie propia
+    sobreviven de forma confiable el redirect completo en todos los
+    entornos de hosting. La confirmación real de disclaimer/privacidad
+    ocurre justo después de volver autenticado."""
     st.login(provider=provider)
 
 
@@ -213,9 +190,41 @@ def _finalize_login_if_needed(conn) -> None:
         st.session_state["user_id"] = existing["user_id"]
         return
 
+    # Confirmación de consentimiento DESPUÉS del login, no antes del
+    # redirect. Motivo (limitación descubierta y documentada): ni
+    # st.session_state ni una cookie propia sobreviven de forma
+    # confiable el viaje completo a Google/Microsoft y de vuelta en
+    # todos los entornos de hosting (confirmado en Streamlit Community
+    # Cloud, donde el iframe usado para la cookie corre aislado en
+    # otro origen). Pedir la confirmación aquí, en un rerun normal
+    # posterior al callback, es 100% fiable porque ya no cruza ningún
+    # redirect — session_state funciona con normalidad de aquí en
+    # adelante para el resto de la sesión.
+    if not st.session_state.get("post_login_consent_given"):
+        st.info(f"Hola, {claims.get('name', 'usuario')} — confirma antes de continuar:")
+        st.info(DISCLAIMER_TEXT)
+        st.caption(f"Versión del disclaimer: {DISCLAIMER_VERSION}")
+        d_ok = st.checkbox(
+            "He leído y acepto el disclaimer académico.", key="cb_disclaimer_post"
+        )
+        st.info(PRIVACY_NOTICE_TEXT)
+        st.caption(f"Versión del aviso de privacidad: {PRIVACY_NOTICE_VERSION}")
+        p_ok = st.checkbox(
+            "He leído y autorizo el tratamiento de datos descrito arriba.",
+            key="cb_privacy_post",
+        )
+        if st.button("Confirmar y continuar", disabled=not (d_ok and p_ok)):
+            st.session_state["post_login_consent_given"] = True
+            st.rerun()
+        return
+
     iss = claims.get("iss", "")
     provider = "microsoft" if "microsoftonline" in iss else "google"
-    flow_id = st.context.cookies.get(_FLOW_COOKIE_NAME)
+    # Se emite y se consume el flow en la MISMA ejecución (nunca cruza
+    # un redirect), por lo que siempre es válido en este punto.
+    flow_id = issue_preconsent_flow(
+        conn, disclaimer_version=DISCLAIMER_VERSION, privacy_version=PRIVACY_NOTICE_VERSION
+    )
 
     try:
         result = auth.complete_login(conn, claims, provider, flow_id)
@@ -241,12 +250,6 @@ def _finalize_login_if_needed(conn) -> None:
     else:
         st.session_state["session_id"] = result["session_id"]
         st.session_state["user_id"] = result["user_id"]
-        # Expira la cookie del flow (ya se consumió en la BD; esto es
-        # solo higiene, evita dejarla viva innecesariamente).
-        st.iframe(
-            f"<script>document.cookie = '{_FLOW_COOKIE_NAME}=; path=/; max-age=0';</script>",
-            height=1,
-        )
         st.rerun()
 
 
