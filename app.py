@@ -37,6 +37,7 @@ from src.beta_capm import (
     unlever_beta,
 )
 from src.rebalance import RebalanceError, rebalance
+from src.technical import rank_by_momentum
 from src.valuation import (
     ValuationError,
     present_value,
@@ -1271,6 +1272,30 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
                 "tau", min_value=0.001, value=0.05, step=0.01, format="%.3f", key="bl_tau"
             )
         w_ref = np.full(n, 1.0 / n)
+
+        with st.expander("Ver momentum de tus activos (ayuda para elegir una view)"):
+            st.caption(
+                "Momentum = retorno acumulado en los últimos N días. Es una "
+                "señal, no una tesis — la tesis (por qué crees que va a "
+                "continuar) sigue siendo tuya (P129)."
+            )
+            momentum_window = st.slider(
+                "Ventana (días)", min_value=5, max_value=120, value=20, step=5,
+                key="momentum_window",
+            )
+            momentum_ranking = rank_by_momentum(
+                {t: result.ok[t].prices for t in selected}, momentum_window
+            )
+            if momentum_ranking:
+                st.dataframe(
+                    [
+                        {"Activo": r.ticker, f"Momentum {r.window}d": f"{r.momentum:+.2%}", "N precios": r.n_obs}
+                        for r in momentum_ranking
+                    ],
+                    use_container_width=True, hide_index=True,
+                )
+            else:
+                st.info("Ningún activo tiene suficiente historia para esta ventana.")
 
         agregar_view = st.checkbox("Agregar una view absoluta propia", key="bl_add_view")
         P_view = Q_view = Omega_view = None
