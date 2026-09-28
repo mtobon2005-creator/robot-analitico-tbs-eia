@@ -1073,10 +1073,19 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
     common_mask = simple_returns.notna().all(axis=1)
     simple_returns = simple_returns.loc[common_mask]
     n_obs = len(simple_returns)
-    if n_obs < 30:
+    n_assets = len(selected)
+    # Con T observaciones y N activos, Sigma (NxN) es singular si T<=N y
+    # queda mal condicionada si T no es varias veces N (GUIA_V2, P37/P38:
+    # "qué cambia cuando N se aproxima a T"). Exigir un mínimo proporcional
+    # a N evita un Sigma casi singular que solo pasaría un umbral fijo.
+    min_obs_required = max(30, 3 * n_assets)
+    if n_obs < min_obs_required:
         st.warning(
-            f"Solo {n_obs} observaciones comunes tras alinear fechas — "
-            "insuficiente para estimar Sigma con confianza (GUIA_V2, P37/P38)."
+            f"Solo {n_obs} observaciones comunes tras alinear fechas para "
+            f"{n_assets} activos — se necesitan al menos {min_obs_required} "
+            "(≈3× el número de activos) para que Σ no quede casi singular "
+            "(GUIA_V2, P37/P38). Sube a 'Fechas, frecuencia y horizonte' y "
+            "cambia a frecuencia **Diaria** y/o amplía el rango de fechas."
         )
         return
 
