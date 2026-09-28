@@ -94,15 +94,20 @@ from src.horizon import (
 )
 from src.privacy import PRIVACY_NOTICE_TEXT, PRIVACY_NOTICE_VERSION
 from src.tickers import (
-    DuplicateTicker,
-    InvalidTicker,
     TickerNotFound,
-    add_ticker,
+    add_tickers_bulk,
     is_ready_for_comparison,
     is_ready_for_single_asset,
     missing_for_comparison,
     remove_ticker,
 )
+
+# Los mismos 20 tickers del fixture sintético del curso (RF-05), para
+# poder probar comparación/portafolio sin escribirlos uno por uno.
+_FIXTURE_TICKERS_PRESET = [
+    "AAPL", "AMZN", "CAT", "COST", "GOOGL", "HD", "JNJ", "JPM", "KO", "MA",
+    "MCD", "META", "MSFT", "NVDA", "PEP", "PG", "UNH", "V", "WMT", "XOM",
+]
 
 st.set_page_config(
     page_title=APP_IDENTITY.system_name,
@@ -295,20 +300,34 @@ def _render_ticker_collection() -> list[str]:
     collection: list[str] = st.session_state.setdefault("ticker_collection", [])
 
     with st.form(key="add_ticker_form", clear_on_submit=True):
-        col_input, col_btn = st.columns([4, 1])
-        with col_input:
-            raw_ticker = st.text_input(
-                "Agregar ticker", placeholder="Ej: AAPL, BRK.B, TD.TO", label_visibility="collapsed"
-            )
-        with col_btn:
-            submitted = st.form_submit_button("Agregar", use_container_width=True)
+        raw_tickers = st.text_area(
+            "Agregar ticker(s)",
+            placeholder=(
+                "Uno o varios, separados por coma, espacio o salto de línea.\n"
+                "Ej: AAPL, MSFT, BRK.B\no pega una lista completa de una vez."
+            ),
+            height=80,
+            label_visibility="collapsed",
+            key="raw_tickers_input",
+        )
+        submitted = st.form_submit_button("Agregar", use_container_width=True)
 
-    if submitted and raw_ticker:
-        try:
-            st.session_state["ticker_collection"] = add_ticker(collection, raw_ticker)
-            st.rerun()
-        except (InvalidTicker, DuplicateTicker) as exc:
-            st.error(str(exc))
+    if submitted and raw_tickers.strip():
+        new_collection, errors = add_tickers_bulk(collection, raw_tickers)
+        st.session_state["ticker_collection"] = new_collection
+        st.session_state["ticker_bulk_errors"] = errors
+        st.rerun()
+
+    bulk_errors = st.session_state.pop("ticker_bulk_errors", None)
+    if bulk_errors:
+        with st.expander(f"⚠️ {len(bulk_errors)} ticker(s) no se agregaron", expanded=True):
+            for raw, reason in bulk_errors:
+                st.write(f"- **{raw}**: {reason}")
+
+    if st.button("Cargar universo de prueba (20 activos del fixture sintético)"):
+        new_collection, _ = add_tickers_bulk(collection, " ".join(_FIXTURE_TICKERS_PRESET))
+        st.session_state["ticker_collection"] = new_collection
+        st.rerun()
 
     if collection:
         st.write(f"**{len(set(collection))} activo(s) en la colección:**")

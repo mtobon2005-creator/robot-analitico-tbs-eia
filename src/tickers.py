@@ -55,6 +55,33 @@ def add_ticker(collection: list[str], raw_ticker: str) -> list[str]:
     return [*collection, ticker]
 
 
+def parse_ticker_list(raw_text: str) -> list[str]:
+    """Separa un bloque de texto en tickers candidatos por coma, espacio
+    o salto de línea (sin normalizar ni validar todavía), preservando
+    el orden de aparición."""
+    return [t for t in re.split(r"[,\s]+", raw_text.strip()) if t]
+
+
+def add_tickers_bulk(collection: list[str], raw_text: str) -> tuple[list[str], list[tuple[str, str]]]:
+    """Agrega varios tickers de un bloque de texto en una sola llamada.
+
+    Cada candidato se valida por separado: uno inválido o duplicado
+    (con la colección existente o repetido dentro del mismo bloque) no
+    detiene a los demás — mismo principio de aislamiento de fallos que
+    RF-08 usa para la descarga de precios.
+
+    Devuelve (colección_nueva, errores), con errores como lista de
+    (ticker_normalizado, motivo)."""
+    result = list(collection)
+    errors: list[tuple[str, str]] = []
+    for raw in parse_ticker_list(raw_text):
+        try:
+            result = add_ticker(result, raw)
+        except (InvalidTicker, DuplicateTicker) as exc:
+            errors.append((normalize_ticker(raw), str(exc)))
+    return result, errors
+
+
 def remove_ticker(collection: list[str], ticker: str) -> list[str]:
     ticker = normalize_ticker(ticker)
     if ticker not in collection:
