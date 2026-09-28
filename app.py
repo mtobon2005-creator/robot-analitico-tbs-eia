@@ -7,6 +7,8 @@ consentimientos, auditoría, outbox de notificación).
 Pendiente: RF-03 en adelante (tickers, fechas, analítica, forecasting,
 VaR, comparación, exportación) y el lifecycle_worker de purga.
 """
+import json
+
 import streamlit as st
 import altair as alt
 import numpy as np
@@ -35,6 +37,13 @@ from src.beta_capm import (
     unlever_beta,
 )
 from src.rebalance import RebalanceError, rebalance
+from src.valuation import (
+    ValuationError,
+    present_value,
+    project_years,
+    terminal_value_gordon,
+    wacc as compute_wacc,
+)
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
 from src.db import get_connection, init_schema
@@ -1557,6 +1566,140 @@ def _render_beta_capm_v2(result: FetchResult | None) -> None:
         )
 
 
+_CASO_ALIMENTOS_PATH = Path(__file__).resolve().parent / "v2" / "data" / "caso_alimentos_parametros.json"
+
+
+def _render_valuation_v2() -> None:
+    """Mandato v2 (M8, GUIA_V2 §9): valoración del caso Alimentos del
+    Norte — FCFF a 5 años, valor terminal y puente a valor patrimonial."""
+    st.header("Valoración: caso Alimentos del Norte")
+
+    parametros = json.loads(_CASO_ALIMENTOS_PATH.read_text())
+    st.caption(
+        f"{parametros['empresa']} — cifras congeladas del caso docente "
+        f"({parametros['unidad']}). No son cotizaciones actuales (GUIA_V2 §9)."
+    )
+    with st.expander("Ver parámetros del caso"):
+        st.json(parametros)
+
+    st.markdown("**Costo de capital (Ke, WACC)**")
+    beta_L_comparable = st.number_input(
+        "Beta del comparable (histórica, ver sección Beta/CAPM)",
+        value=1.5142857142857142, step=0.01, format="%.4f", key="val_beta_comparable",
+    )
+    try:
+        beta_U = unlever_beta(beta_L_comparable, parametros["tax_supuesto"], parametros["de_comparable"])
+        beta_L_alimentos = relever_beta(beta_U, parametros["tax_supuesto"], parametros["de_empresa"])
+        ke_usd = capm_ke(
+            parametros["rf_USD"], beta_L_alimentos, parametros["erp_madura"],
+            country_risk_premium=parametros["proxy_pais"], lambda_=parametros["lambda"],
+        )
+        ke_cop = convert_ke_by_inflation(ke_usd, parametros["inflacion_COL"], parametros["inflacion_USA"])
+        wacc_value = compute_wacc(
+            E=1.0, D=parametros["de_empresa"], Ke=ke_cop,
+            Kd=parametros["kd_EA"], tax=parametros["tax_supuesto"],
+        )
+    except (BetaCapmError, ValuationError) as exc:
+        st.error(str(exc))
+        return
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Beta reapalancada (Alimentos del Norte)", f"{beta_L_alimentos:.4f}")
+    col2.metric("Ke (COP)", f"{ke_cop:.4%}")
+    col3.metric("WACC", f"{wacc_value:.4%}")
+
+    st.markdown("**Supuestos de crecimiento en ventas (años 1-5)**")
+    st.caption(
+        "Esta es tu decisión financiera, no la invento (P114): ¿qué "
+        "evidencia de negocio respalda estas tasas? El 0% por defecto es "
+        "un punto de partida neutro (ventas planas), no un pronóstico."
+    )
+    growth_rates = []
+    cols = st.columns(5)
+    for i, col in enumerate(cols, start=1):
+        with col:
+            g = st.number_input(
+                f"Año {i}", value=0.0, step=0.01, format="%.4f", key=f"val_growth_y{i}"
+            )
+            growth_rates.append(g)
+
+    try:
+        projections = project_years(
+            sales_growth_rates=growth_rates,
+            sales0=parametros["ventas0"],
+            capacity0=parametros["capacidad_ventas"],
+            variable_cost_rate=parametros["costo_variable"],
+            fixed_costs=parametros["gastos_fijos"],
+            depreciation0=parametros["depreciacion0"],
+            tax=parametros["tax_supuesto"],
+            nwc_sales_rate=parametros["nwc_ventas"],
+            capex_per_unit_expansion=parametros["capex_venta_adicional"],
+            useful_life_years=parametros["vida_depreciacion"],
+        )
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+
+    st.dataframe(
+        [
+            {
+                "Año": p.year,
+                "Ventas": f"{p.sales:,.0f}",
+                "EBIT": f"{p.ebit:,.0f}",
+                "Depreciación": f"{p.depreciation:,.0f}",
+                "CAPEX": f"{p.capex:,.0f}",
+                "ΔNWC": f"{p.delta_nwc:,.0f}",
+                "FCFF": f"{p.fcff:,.0f}",
+                "Capacidad fin de año": f"{p.capacity_end:,.0f}",
+            }
+            for p in projections
+        ],
+        use_container_width=True, hide_index=True,
+    )
+    st.caption(
+        "CAPEX = depreciación (mantenimiento) mientras las ventas quepan "
+        "en la capacidad disponible; si la exceden, se agrega CAPEX de "
+        "expansión que empieza a depreciarse el año siguiente (una "
+        "interpretación razonable del bucle capacidad-CAPEX-depreciación, "
+        "P115 — documenta la tuya si difieres)."
+    )
+
+    st.markdown("**Valor terminal y valor presente**")
+    g_terminal = st.number_input(
+        "g terminal", value=parametros["g_terminal"], step=0.001, format="%.4f", key="val_g_terminal"
+    )
+    fcff_terminal_next = projections[-1].fcff * (1 + g_terminal)
+    try:
+        tv = terminal_value_gordon(fcff_terminal_next, wacc_value, g_terminal)
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+
+    explicit_flows = [p.fcff for p in projections]
+    pv_explicit = present_value(explicit_flows, wacc_value)
+    pv_terminal = tv / (1 + wacc_value) ** len(projections)
+    ev = pv_explicit + pv_terminal
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("VP flujos explícitos", f"{pv_explicit:,.0f}")
+    col2.metric("VP valor terminal", f"{pv_terminal:,.0f}")
+    col3.metric("Valor de la empresa (EV)", f"{ev:,.0f}")
+    st.caption(
+        f"Peso del terminal sobre EV: {pv_terminal/ev:.1%} — reportarlo es "
+        "obligatorio (P118); >80-90% suele indicar que casi todo el valor "
+        "depende de un supuesto de largo plazo frágil (g terminal)."
+    )
+
+    equity_value = ev - parametros["deuda_financiera"]
+    st.metric("Valor patrimonial estimado (EV − deuda financiera)", f"{equity_value:,.0f}")
+    st.caption(
+        f"{parametros['unidad']}. Comparación: patrimonio en libros = "
+        f"{parametros['patrimonio_libros']:,.0f}. Simplificación: se asume "
+        "caja excedente y otros activos no operativos en cero (el caso de "
+        "control no los incluye por separado)."
+    )
+
+
 def _render_authenticated_view(conn) -> None:
     st.success(f"Sesión activa como **{st.user.get('name', 'usuario')}**.")
     if st.button("Cerrar sesión"):
@@ -1599,6 +1742,9 @@ def _render_authenticated_view(conn) -> None:
 
     st.divider()
     _render_beta_capm_v2(st.session_state.get("fetch_result"))
+
+    st.divider()
+    _render_valuation_v2()
 
     st.divider()
     st.header("Núcleo obligatorio: RF-01 a RF-22 completos")
