@@ -27,7 +27,7 @@ class AppIdentity:
 APP_IDENTITY = AppIdentity(
     team_name="Mariana Tobón H",
     members=(
-        TeamMember(name="Integrante 1 (Mariana Tobón H)")
+        TeamMember(name="Integrante 1 (Mariana Tobón H)"),
     ),
     system_name="Robot Analítico TBS-EIA",
     version="0.1.0",

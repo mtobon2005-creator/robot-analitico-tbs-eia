@@ -85,9 +85,20 @@ def test_touch_session_not_found_raises(conn):
 
 def test_only_one_active_session_per_user(conn):
     _make_profile(conn)
-    sessions.create_session(conn, "u1", idp_iat=None)
-    with pytest.raises(Exception):  # UNIQUE index violation esperado
-        sessions.create_session(conn, "u1", idp_iat=None)
+    first_session_id = sessions.create_session(conn, "u1", idp_iat=None)
+    second_session_id = sessions.create_session(conn, "u1", idp_iat=None)
+
+    active = conn.execute(
+        "SELECT session_id FROM app_sessions WHERE user_id = ? AND status = 'active'",
+        ("u1",),
+    ).fetchall()
+    assert [row["session_id"] for row in active] == [second_session_id]
+
+    closed_status = conn.execute(
+        "SELECT status FROM app_sessions WHERE session_id = ?",
+        (first_session_id,),
+    ).fetchone()["status"]
+    assert closed_status == "closed"
 
 
 def test_touch_session_expires_after_inactivity(conn, monkeypatch):
