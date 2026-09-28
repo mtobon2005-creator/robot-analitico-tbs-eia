@@ -38,6 +38,7 @@ from src.beta_capm import (
 )
 from src.rebalance import RebalanceError, rebalance
 from src.technical import rank_by_momentum
+from src.traceability import build_trace_record
 from src.valuation import (
     ValuationError,
     present_value,
@@ -1429,6 +1430,49 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
             st.caption(
                 f"Caja final: {reb.caja_final:,.2f} · Nominal negociado: {reb.nominal_negociado:,.2f}"
             )
+
+    st.markdown("**Trazabilidad y exportación (GUIA_V2 §11)**")
+    trace_params = {
+        "rf_anual": rf_anual,
+        "gamma": gamma,
+        "bounds": "[0,1] por activo (largo, sin apalancamiento)",
+    }
+    if usar_shrinkage:
+        trace_params["shrinkage_delta"] = shrink_delta
+    if usar_bl:
+        trace_params["bl_delta"] = delta
+        trace_params["bl_tau"] = tau
+        trace_params["bl_view_added"] = bool(bl_tan_weights is not None)
+
+    trace = build_trace_record(
+        source=result.ok[selected[0]].source,
+        currency=next(iter(currencies)),
+        frequency=frequency,
+        return_convention="retornos simples (agregación de cartera, GUIA_V2 §4.1)",
+        annualization="lineal (mu x m, Sigma x m)",
+        asset_order=selected,
+        common_rows=n_obs,
+        parameters=trace_params,
+        solver="scipy.optimize.minimize (SLSQP) — src/portfolio.py",
+        residuals={
+            "gmv": {"success": gmv.solver_success, "message": gmv.solver_message},
+            "tangente": {"success": tan.solver_success, "message": tan.solver_message},
+            "optimo_personal": {"success": opt.solver_success, "message": opt.solver_message},
+            "maximo_retorno": {"success": maxret.solver_success, "message": maxret.solver_message},
+        },
+        test_evidence="tests/unit/test_v2_portfolio.py",
+    )
+    st.download_button(
+        "Descargar trazabilidad de este análisis (JSON)",
+        data=json.dumps(trace, indent=2, ensure_ascii=False),
+        file_name=f"trazabilidad_portafolio_{trace['analysis_id'][:8]}.json",
+        mime="application/json",
+        key="portfolio_trace_download",
+    )
+    st.caption(
+        "`student_decision` queda vacío a propósito — anota en tu README/BITACORA "
+        "por qué elegiste estos parámetros (P154), la IA no lo inventa."
+    )
 
 
 def _render_beta_capm_v2(result: FetchResult | None) -> None:
