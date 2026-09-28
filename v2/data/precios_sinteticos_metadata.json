@@ -1,0 +1,9 @@
+{
+  "tipo": "sintetico",
+  "seed": 20260925,
+  "filas_precios": 600,
+  "activos": 20,
+  "calendario": "lunes-viernes didactico, NO calendario bursatil",
+  "sha256": "cd34e7826bc5fdd25e7ab2ef946b89e3492fe1b509884e4ed65bbd16b2a1e0a2",
+  "uso": "pruebas nuevas; conservar fixtures y referencias heredadas de v1 por separado"
+}

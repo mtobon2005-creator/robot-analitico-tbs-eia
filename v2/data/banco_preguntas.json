@@ -1,0 +1,1282 @@
+[
+  {
+    "id": "P1",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué decisión concreta debe mejorar el BOT, quién la tomará y qué evidencia demostrará esa mejora?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P2",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué ruta de escalamiento prioriza el equipo y por qué resuelve una necesidad más importante que agregar indicadores?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P3",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué restricciones provienen del inversionista, del instrumento y de una simplificación pedagógica, y cómo se distinguen?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P4",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo traduce moneda, obligaciones, horizonte, liquidez y pérdida tolerable en límites verificables?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P5",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué significa óptimo para este inversionista y qué preferencia haría que otro eligiera una cartera distinta?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P6",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué decisiones financieras conservará cada estudiante y qué tareas puede delegar a la IA sin perder responsabilidad?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P7",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué resultado justificaría no invertir o no rebalancear aunque el optimizador entregue pesos?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P8",
+    "bloque": 1,
+    "tema": "Propósito, mandato y especialización",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué demostración pequeña podría refutar la idea inicial antes de construir todas las pantallas?",
+    "evidencia": "Mandato financiero de una página."
+  },
+  {
+    "id": "P9",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué significa cada campo del proveedor y cómo verificará ajuste, dividendos, splits, bolsa y moneda?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P10",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo distingue hora del negocio, de la barra, recepción y cálculo, y cuándo considera obsoleto un dato?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P11",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué calendario evita tratar feriados, suspensiones o precios estancados como nuevas observaciones?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P12",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo evita convertir un hueco de varios días en un rendimiento diario después de eliminar fechas?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P13",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué ocurre si un activo tiene menos historia y cómo conserva visible el universo efectivamente optimizado?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P14",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo convierte el rendimiento USD a COP y controla la asincronía del tipo de cambio?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P15",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué derechos permiten consultar, almacenar y mostrar los datos, y cuáles no concede yfinance?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P16",
+    "bloque": 2,
+    "tema": "Datos de mercado y comparabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué evidencia demuestra que el gráfico cambió por información nueva y no por una animación, un fixture o un reloj local?",
+    "evidencia": "Diccionario, muestra común y consultas identificadas."
+  },
+  {
+    "id": "P17",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué esquema tiene el DataFrame maestro y qué clave diferencia bolsa, clase de acción y revisión de un ticker?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P18",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué operaciones de pandas ordenan, deduplican, alinean y remuestrean, y qué decisión financiera implica cada una?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P19",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué pct_change entrega una fracción y qué error aparece al confundir 0,01 con 0,01 %?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P20",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo conserva el orden de activos entre DataFrame, arrays, pesos, Sigma y P?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P21",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Cuándo usa inner join, outer join y merge_asof hacia atrás para precios y anuncios?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P22",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo maneja NaN, infinito, precios no positivos y fechas incompatibles sin esconderlos con ceros?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P23",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo separa funciones numéricas puras, red e interfaz para probar sin conexión?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P24",
+    "bloque": 3,
+    "tema": "Python y pandas",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué elementos hacen reproducible un cálculo y cuáles pueden cambiar aunque la fecha histórica solicitada sea la misma?",
+    "evidencia": "Transformaciones reproducibles y orden verificado."
+  },
+  {
+    "id": "P25",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué los logs se suman en el tiempo, pero una cartera se agrega con retornos simples y pesos iniciales?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P26",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué producen +10 % y -10 % con pesos iguales y qué sesgo introduce promediar sus logs?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P27",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué pregunta responde cada medida: media aritmética, geométrica, logarítmica y CAGR?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P28",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué supuesto permite multiplicar una covarianza por m y qué cambia con autocorrelación?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P29",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo convierte rf efectiva anual y evita mezclarla con una media anualizada linealmente?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P30",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo decide la ventana sin escoger retrospectivamente la que mejora la inversión?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P31",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué incertidumbre de la media podría invertir el ranking de dos activos y cómo la cuantifica?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P32",
+    "bloque": 4,
+    "tema": "Rendimientos y estimación",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo diferencia rendimiento histórico, expectativa, retorno implícito y rendimiento requerido en cada vista?",
+    "evidencia": "Control de agregación y convención temporal."
+  },
+  {
+    "id": "P33",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo reconstruye una covarianza centrando los datos y por qué ese estimador utiliza T-1?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P34",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué unidad tiene Sigma y qué pasa si introduce porcentajes en lugar de decimales?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P35",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué correlación cero no demuestra independencia ni ausencia de dependencia en colas?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P36",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo puede la eliminación por pares producir una matriz no PSD y qué resuelve una muestra común?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P37",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo distingue singularidad, mal condicionamiento e indefinición, y cuál rompe la convexidad de la varianza?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P38",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué cambia cuando N se aproxima a T y por qué más tickers pueden deteriorar la estimación?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P39",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué problema busca corregir shrinkage o EWMA y cómo elige sus parámetros sin mirar la prueba?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P40",
+    "bloque": 5,
+    "tema": "Covarianza, correlación y estabilidad",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo separa el efecto de volatilidades y correlaciones sobre la pérdida de diversificación?",
+    "evidencia": "Matrices manuales, PSD y estimadores contrastados."
+  },
+  {
+    "id": "P41",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué el promedio ponderado de volatilidades no representa el riesgo del portafolio?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P42",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué falta para calcular el riesgo económico de una lista de activos sin pesos?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P43",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo diferencia volatilidad por barra, variación realizada y volatilidad condicional estimada?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P44",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Cuántas barras completas necesita y qué desfase entre activos invalida el cálculo intradía?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P45",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo calcula contribuciones al riesgo y cuándo una contribución negativa es una cobertura válida?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P46",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué limitaciones del VaR justifican añadir drawdown, pérdida en cola, liquidez y concentración?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P47",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué shock conjunto podría destruir la diversificación observada en la muestra?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P48",
+    "bloque": 6,
+    "tema": "Riesgo individual y conjunto en línea",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo atribuye un aumento de riesgo a deriva de pesos, cambio de Sigma o cambio de metodología?",
+    "evidencia": "Pesos definidos, ventanas móviles y contribuciones."
+  },
+  {
+    "id": "P49",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué ecuaciones definen W y cómo comprueba que al menos una cartera satisface todas las restricciones?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P50",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué miles de carteras simuladas no prueban haber encontrado la frontera eficiente?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P51",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo obtiene las ramas eficiente y no eficiente al minimizar varianza para cada retorno objetivo?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P52",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo distingue un activo no dominado, una cartera eficiente y un punto interior dominado?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P53",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué espera con dos activos de correlación -1, 0 y 1 y qué condiciones adicionales importan?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P54",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Cuándo es válida la GMV por fórmula inversa y cuándo exige un solver restringido?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P55",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo cambian el máximo rendimiento y su acotación al permitir cortos o deuda?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P56",
+    "bloque": 7,
+    "tema": "Conjunto factible y fronteras",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué residuales y verificaciones exige además del mensaje success del optimizador?",
+    "evidencia": "Restricciones y frontera obtenida por optimización."
+  },
+  {
+    "id": "P57",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo justifica gamma sin inferir preferencias personales de la historia de precios?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P58",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué GMV o máxima razón Sharpe pueden no coincidir con el óptimo del inversionista?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P59",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué expresa la CAL y qué implica y mayor que uno sobre financiación y riesgo?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P60",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo cambia la oportunidad si endeudarse cuesta más que invertir a rf?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P61",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué condiciones permiten denominar CML a una CAL y qué limita el proxy de mercado?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P62",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué CML usa volatilidad y SML beta, y qué objetos pertenecen a cada relación?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P63",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué decisión adopta con premios esperados negativos y por qué normalizar un vector no basta para hallar tangencia?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P64",
+    "bloque": 8,
+    "tema": "Preferencias, tangencia, CAL, CML y SML",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué requiere matemáticamente la cuenta media-varianza y qué supuestos pertenecen a preferencias o equilibrio en vez de al cálculo?",
+    "evidencia": "Objetivo personal y mercado diferenciados."
+  },
+  {
+    "id": "P65",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué debilidad de las medias históricas atiende BL y qué problema no resuelve?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P66",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿De dónde salen los pesos del prior y cuándo pueden llamarse de mercado?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P67",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué pi=delta*Sigma*w_ref está en exceso y cómo evita sumar rf dos veces?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P68",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo estima o justifica delta y por qué no es gamma del inversionista?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P69",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué representan Sigma, tau*Sigma y Omega y por qué no son intercambiables?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P70",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo representa una view absoluta y una relativa en P y Q manteniendo el orden de activos?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P71",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué el patrimonio de un ETF no equivale a capitalización de su mercado subyacente?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P72",
+    "bloque": 9,
+    "tema": "Black-Litterman y prior",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué debe ocurrir sin views y cuando Q=P*pi, y bajo qué condiciones se recuperarían también los pesos iniciales?",
+    "evidencia": "Prior y unidades de referencia documentados."
+  },
+  {
+    "id": "P73",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué tesis respalda cada view y qué observación podría contradecirla?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P74",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo conecta crecimiento de ventas con retorno esperado sin tratarlos como la misma variable?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P75",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo justifica incertidumbre de una view y por qué confianza no es probabilidad garantizada de ganancia?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P76",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo maneja confianza cero, certeza y opiniones incompatibles?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P77",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo impide duplicar la misma noticia mediante varias views o actualizaciones repetidas del posterior?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P78",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cuándo vence una opinión y qué información reduce su confianza antes de esa fecha?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P79",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué tau puede cancelarse en la media si Omega escala con él y qué incertidumbre podría seguir cambiando?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P80",
+    "bloque": 10,
+    "tema": "Black-Litterman y opiniones",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo explica cambios en pesos BL con GMV invariable cuando Sigma y W permanecen fijas?",
+    "evidencia": "Views con evidencia, incertidumbre y refutación."
+  },
+  {
+    "id": "P81",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué información activa rebalanceo y qué cambios solo actualizan precio o riesgo visual?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P82",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo distingue actualización de cotizaciones, recalibración estadística y decisión de operar?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P83",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo reconstruye los pesos que derivaron antes de compararlos con los nuevos objetivos?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P84",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué justifica el umbral de desviación, banda de no operación y espera mínima?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P85",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué hace si la cartera anterior deja de ser eficiente bajo el nuevo modelo, pero el cambio no cubre sus costos?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P86",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo actualiza prior, views y elegibilidad sin reescribir una decisión pasada?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P87",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo evita rebalanceos por eventos duplicados, splits o precios obsoletos?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P88",
+    "bloque": 11,
+    "tema": "Rebalanceo y nueva información",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué guarda de las fronteras anterior y nueva para explicar por qué cambió la decisión?",
+    "evidencia": "Política por calendario y eventos."
+  },
+  {
+    "id": "P89",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué fechas usa para información, decisión y ejecución, y cómo prueba que no negocia antes de conocer el dato?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P90",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo convierte pesos a cantidades con lotes, caja, liquidez y activos no negociables?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P91",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué diferencia hay entre turnover unilateral y nominal negociado, y sobre cuál cobra costos?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P92",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo comprueba V_post=V_pre-costos y separa aportes, retiros, dividendos y P&L?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P93",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué supuestos adopta para spread, slippage e impacto y cuáles corresponden a datos observados?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P94",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo compara mantener cantidades, 1/N, GMV, Markowitz y BL con costos y períodos equivalentes?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P95",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué bloques de entrenamiento, validación y prueba no reutilizará al ajustar reglas?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P96",
+    "bloque": 12,
+    "tema": "Ejecución simulada y prueba temporal",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué condición suspende la estrategia cuando pierde estabilidad o falla fuera de muestra?",
+    "evidencia": "Posiciones, caja y costos reconciliados."
+  },
+  {
+    "id": "P97",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué benchmark remunera el riesgo que interesa y qué exposición omite?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P98",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo obtiene beta por covarianza/varianza y lo contrasta con OLS con intercepto?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P99",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué cambia si calcula beta de excesos con rf variable frente a retornos brutos?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P100",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo interpreta error estándar, intervalo, R² y residuales sin reducir el diagnóstico a un p-valor?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P101",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo afectan ventana, frecuencia, iliquidez y negociación asincrónica la estabilidad del beta?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P102",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Cuándo beta de cartera es suma ponderada de betas individuales y qué pesos usa?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P103",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué seis observaciones sirven para el control de clase pero no acreditan precisión suficiente para valorar?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P104",
+    "bloque": 13,
+    "tema": "Beta y econometría",
+    "tipo": "nucleo",
+    "pregunta": "¿Por qué cambiar una view no modifica beta histórico del activo frente a benchmark fijo, aunque cambie el beta de la cartera?",
+    "evidencia": "Benchmark previo y estimación con incertidumbre."
+  },
+  {
+    "id": "P105",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué parte del beta corresponde al negocio y cuál al apalancamiento del comparable?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P106",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué partidas entran en D/E y por qué no puede mezclar pasivos operativos, deuda financiera y libros sin explicarlo?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P107",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué supuesto permite beta_D=0 y qué fórmula cambia si la deuda es riesgosa?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P108",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo trata circularidad cuando D/E usa el valor patrimonial que se está calculando?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P109",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo selecciona rf y ERP por moneda y plazo sin confundir expectativa con retorno requerido?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P110",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo incorpora riesgo país y exposición sin cobrarlo dos veces?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P111",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué supuesto sostiene la conversión por inflaciones y por qué no predice ciertamente la TRM?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P112",
+    "bloque": 14,
+    "tema": "Apalancamiento y rendimiento requerido",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué decide si más deuda eleva ROE, Ke, costo de deuda y riesgo de incumplimiento a la vez?",
+    "evidencia": "Hamada y CAPM coherentes con el riesgo."
+  },
+  {
+    "id": "P113",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo usa Ke para una meta presupuestal sin igualar ROE contable con rentabilidad de mercado?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P114",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué ventas, márgenes y gastos cerrarían la brecha de EBIT y qué evidencia de negocio los respalda?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P115",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo resuelve el bucle ventas-capacidad-CAPEX-depreciación con tolerancia comprobable?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P116",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué distingue utilidad, FCFF, FCFE y dividendo disponible y qué tasa aplica a cada flujo?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P117",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo reconcilia EV y patrimonio sin duplicar caja, deuda u otros ajustes?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P118",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué reinversión y ROIC sostienen g terminal y cuándo CAPEX=depreciación es incompatible con crecer?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P119",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo actualiza beta, Ke y WACC si cambia D/E en la valoración?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P120",
+    "bloque": 15,
+    "tema": "Empresa, presupuesto y valoración",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué supuesto domina el valor y qué combinación de margen, tasa o reinversión refuta la tesis?",
+    "evidencia": "Flujos, reinversión y tasa consistente."
+  },
+  {
+    "id": "P121",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué sectores, monedas, insumos y tasas conectan las posiciones entre sí y con la empresa?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P122",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué información representa sorpresa frente a expectativas y cuál era conocida por el mercado?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P123",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué mecanismos y rezagos conectan una subida de tasas con margen, caja y precio de acciones?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P124",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué retroalimentación entre pérdidas, liquidez y ventas forzadas puede amplificar el shock?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P125",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo distingue régimen y ruido, considerando el costo de reaccionar pronto o tarde?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P126",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué evidencia adversa hizo cambiar una tesis y cómo modificó su magnitud o confianza?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P127",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué escenario inverso identifica la combinación que rompe riesgo, caja o covenants?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P128",
+    "bloque": 16,
+    "tema": "Pensamiento sistémico y escucha",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué decisión se sostiene con modelos rivales y cuál depende de un supuesto frágil?",
+    "evidencia": "Exposiciones, escenarios y revisión de tesis."
+  },
+  {
+    "id": "P129",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Qué mecanismo financiero respalda el indicador y por qué añade valor frente a observar el precio?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P130",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Qué ajuste, precio, volumen y frecuencia requiere y cómo maneja barras incompletas?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P131",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Cuándo se conoce la señal y qué precio posterior podría ejecutarse?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P132",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo distingue momentum, reversión y ruptura sin cambiar de definición después de perder?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P133",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Qué benchmark y costos podrían explicar toda su ventaja aparente?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P134",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo limita búsqueda de parámetros y pruebas múltiples para no seleccionar ruido?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P135",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo convierte la señal en view BL sin duplicar la evidencia que ya usa el modelo?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P136",
+    "bloque": 17,
+    "tema": "Ruta de análisis técnico",
+    "tipo": "optativa",
+    "pregunta": "¿Qué resultado fuera de muestra obligaría a retirar el indicador aunque el backtest completo sea atractivo?",
+    "evidencia": "Hipótesis falsable, señal y ejecución temporal."
+  },
+  {
+    "id": "P137",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Qué estados financieros estaban publicados a la fecha y cómo conserva reexpresiones?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P138",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo normaliza no recurrentes, arrendamientos y partidas financieras sin manipular múltiplos?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P139",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Qué relación une ROIC, reinversión, ventaja competitiva, crecimiento y valor?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P140",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo elige comparables por negocio y riesgo en vez del múltiplo que desea obtener?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P141",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Qué flujo es incremental, costo hundido, costo de oportunidad o canibalización en un proyecto?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P142",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Qué tasa corresponde al proyecto y qué error aparece al usar siempre el WACC corporativo?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P143",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo trata exclusión mutua, distinta vida y conflicto entre VPN y TIR?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P144",
+    "bloque": 18,
+    "tema": "Ruta fundamental y proyectos",
+    "tipo": "optativa",
+    "pregunta": "¿Qué evidencia justificaría posponer o abandonar, y cómo evita contar esa flexibilidad dos veces?",
+    "evidencia": "Fuentes publicadas y flujos incrementales."
+  },
+  {
+    "id": "P145",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Qué mecanismo respalda la variable macro elegida y cómo evita una correlación hallada por búsqueda?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P146",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo conserva publicación, revisión y expectativa para no usar información futura?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P147",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Qué trigger define activación, salida, persistencia, enfriamiento y vencimiento?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P148",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo diferencia predicción estadística, causalidad y prima de un modelo multifactorial?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P149",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Qué presupuesto de riesgo y límites fija antes de evaluar ganancias?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P150",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Cómo evalúa estacionariedad, cointegración, costos y capacidad en una estrategia de pares?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P151",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Qué controles impiden convertir una búsqueda masiva en un Sharpe producto del azar?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P152",
+    "bloque": 19,
+    "tema": "Ruta macro y trading cuantitativo",
+    "tipo": "optativa",
+    "pregunta": "¿Qué dato suspende la simulación y qué mandato distinto sería necesario antes de operar dinero real?",
+    "evidencia": "Vintages, señales y robustez fuera de muestra."
+  },
+  {
+    "id": "P153",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo sigue un dato desde fuente/campo hasta muestra, fórmula, solver, peso y decisión?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P154",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué archivos y hashes reproducen la decisión sin reemplazarla por una versión de datos posterior?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P155",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué explicó, decidió, corrigió y probó cada integrante frente a lo que produjo la IA?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P156",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué cálculo y cambio breve puede realizar cada estudiante sin IA para demostrar dominio?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P157",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo comunica retraso, incertidumbre y ausencia de señal sin insinuar una recomendación real?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P158",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Cómo mantiene contexto, foco, unidades y tabla accesible cuando se actualizan gráficos?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P159",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué pruebas negativas intentan romper el sistema y qué evidencia demuestra el fallo antes de corregirlo?",
+    "evidencia": "Reproducción y dominio individual."
+  },
+  {
+    "id": "P160",
+    "bloque": 20,
+    "tema": "Trazabilidad, defensa y experiencia",
+    "tipo": "nucleo",
+    "pregunta": "¿Qué diferencia existe entre validar este paquete, validar el BOT, publicar y aceptar la defensa, y qué falta en cada nivel?",
+    "evidencia": "Reproducción y dominio individual."
+  }
+]
