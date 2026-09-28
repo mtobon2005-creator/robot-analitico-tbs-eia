@@ -16,6 +16,7 @@ from pathlib import Path
 
 from src import auth, sessions, audit
 from src.black_litterman import BlackLittermanError, black_litterman
+from src.covariance import shrink_to_diagonal
 from src.portfolio import (
     PortfolioOptimizationError,
     efficient_frontier,
@@ -1123,6 +1124,27 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         )
     bounds = [(0.0, 1.0)] * len(selected)
 
+    usar_shrinkage = st.checkbox(
+        "Comparar con covarianza shrinkage hacia la diagonal (GUIA_V2, P39)",
+        key="portfolio_use_shrinkage",
+    )
+    Sigma_shrunk = None
+    if usar_shrinkage:
+        shrink_delta = st.slider(
+            "delta (0 = Σ muestral sin cambios; 1 = activos tratados como "
+            "independientes)",
+            min_value=0.0, max_value=1.0, value=0.2, step=0.05,
+            key="portfolio_shrink_delta",
+        )
+        shrink_result = shrink_to_diagonal(Sigma_annual, shrink_delta)
+        Sigma_shrunk = shrink_result.Sigma
+        st.caption(
+            "La covarianza muestral con pocas observaciones relativas a N "
+            "activos sobreajusta la frontera (Sharpe irrealmente altos, "
+            "carteras muy concentradas). Elegiste delta tú — no se ajustó "
+            "mirando el resultado (P39)."
+        )
+
     try:
         gmv = global_min_variance(mu_annual, Sigma_annual, bounds=bounds)
         tan = tangency_portfolio(mu_annual, Sigma_annual, rf_anual, bounds=bounds)
@@ -1143,11 +1165,36 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         row = {"Cartera": nombre, "μ anual": f"{res.expected_return:.4%}", "σ anual": f"{res.volatility:.4%}"}
         row.update({t: f"{w:.2%}" for t, w in zip(selected, res.weights)})
         carteras_rows.append(row)
+
+    if Sigma_shrunk is not None:
+        try:
+            gmv_s = global_min_variance(mu_annual, Sigma_shrunk, bounds=bounds)
+            tan_s = tangency_portfolio(mu_annual, Sigma_shrunk, rf_anual, bounds=bounds)
+            opt_s = personal_optimum(mu_annual, Sigma_shrunk, gamma, bounds=bounds)
+        except PortfolioOptimizationError as exc:
+            st.error(f"El solver no convergió con Σ shrinkage: {exc}")
+        else:
+            for nombre, res in [
+                (f"Mínima varianza — shrinkage δ={shrink_delta:g}", gmv_s),
+                (f"Tangente — shrinkage δ={shrink_delta:g}", tan_s),
+                (f"Óptimo personal (γ={gamma:g}) — shrinkage δ={shrink_delta:g}", opt_s),
+            ]:
+                row = {
+                    "Cartera": nombre,
+                    "μ anual": f"{res.expected_return:.4%}",
+                    "σ anual": f"{res.volatility:.4%}",
+                }
+                row.update({t: f"{w:.2%}" for t, w in zip(selected, res.weights)})
+                carteras_rows.append(row)
+
     st.dataframe(carteras_rows, use_container_width=True, hide_index=True)
     st.caption(
         "GMV depende solo de Σ, no de μ (GUIA_V2, tabla 5.1). El óptimo "
         "personal requiere γ del inversionista — no se infiere de los "
-        "precios históricos (P57)."
+        "precios históricos (P57). Compara cuánto se concentran los pesos "
+        "'crudos' contra su versión con shrinkage: menos concentración y "
+        "un Sharpe más realista en la tangente suele indicar que la "
+        "versión cruda estaba sobreajustada al ruido de la muestra."
     )
 
     st.markdown("**Frontera eficiente**")
