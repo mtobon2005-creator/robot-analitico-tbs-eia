@@ -7,7 +7,7 @@ completo (RF-01 a RF-22, RNF-01 a RNF-05).
 ## Estado actual (este commit)
 
 **Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker**
-(221/221 pruebas pasando):
+(219/219 pruebas pasando):
 
 - RF-01 a RF-22: ver secciones anteriores — todo verificado contra los
   casos oficiales de la matriz de pruebas.
@@ -45,6 +45,61 @@ completo (RF-01 a RF-22, RNF-01 a RNF-05).
 - Reemplazar los placeholders de equipo (`src/config.py`,
   `CONTRIBUTIONS.md`) una vez esté conformado.
 - Mejoras opcionales (sección 9.1) — ninguna necesaria para 100 puntos.
+
+## Mandato v2 (escalamiento a asignación de capital)
+
+Ampliación acordada con el estudiante para la versión 2 (Markowitz,
+Black-Litterman, rebalanceo, CAPM/valoración). No sustituye el núcleo
+v1 documentado arriba; lo extiende.
+
+- **Usuario y decisión:** inversionista individual hipotético. Decidir
+  cuánto capital asignar entre los activos del universo
+  (Markowitz/Black-Litterman) y cuándo rebalancear esa asignación ante
+  información nueva (señal técnica, evento macro o vencimiento de una
+  view).
+- **Ruta principal y necesidad:** trading cuantitativo simulado
+  (principal) + análisis técnico (complementaria) — la señal técnica
+  alimenta el trigger de rebalanceo; resuelve traducir información de
+  mercado en una decisión de cartera defendible, no agregar
+  indicadores sueltos. Fundamental/valoración se usa solo para el
+  núcleo obligatorio (caso Alimentos del Norte, CAPM), no como ruta.
+- **Universo, benchmark, moneda y horizonte:** universo mixto —
+  laboratorio sintético (pruebas sin red) y Yahoo real (`yfinance`) en
+  paralelo. Benchmark: S&P 500. Moneda: USD y COP con conversión FX
+  explícita (`P_COP=P_USD*FX`, ver GUIA_V2 §3.2) — **no implementada
+  aún en v1**, es alcance nuevo de v2. Horizonte: 12 meses, con
+  rebalanceo mensual + por umbral/evento.
+- **Objetivo y restricciones:** maximizar utilidad media-varianza
+  `U=w'mu-(gamma/2)*w'Sigma*w` sujeto a VaR 95% mensual ≤ 5% del
+  capital y drawdown máximo 15%. Posiciones largas, liquidez total,
+  sin obligaciones externas ni deuda. *(Horizonte, límites de riesgo y
+  ausencia de obligaciones son supuestos de trabajo propuestos por el
+  tutor IA a solicitud del estudiante — deben poder justificarse en la
+  defensa individual, punto 156-157 de la guía.)*
+- **Convención, ventana y estimador de mu/Sigma:** capa individual en
+  log-retornos `g_it=ln(P_it/P_i,t-1)`; capa de cartera en retornos
+  simples `R_it=exp(g_it)-1`. Sigma muestral con `ddof=1` sobre muestra
+  común. Tamaño de ventana pendiente de definir al escalar al universo
+  real (banco de preguntas, P30).
+- **Prior, regla de views y confianza:** Black-Litterman con
+  `pi=delta*Sigma*w_ref`; views alimentadas por la señal técnica de la
+  ruta elegida. Confianza por view y `w_ref` pendientes de definir al
+  construir el módulo BL (no se inventan aquí — son decisión financiera
+  material, punto H0 del prompt tutor).
+- **Rebalanceo, costos y criterio de abstención:** regla periódica
+  mensual + regla por umbral/evento (señal técnica o vencimiento de
+  view). Banda de no operación y costos a calibrar usando
+  `data/rebalanceo_control.json` como caso de control inicial.
+- **Fuente, disponibilidad y derechos:** fixture sintético
+  (`data/precios_sinteticos_20.csv`) para pruebas sin red; Yahoo vía
+  `yfinance` para universo y benchmark reales — sin redistribuir
+  cotizaciones (ver limitación #3 de este README y GUIA_V2 §3.3).
+- **Base v1, rama, commit y pruebas:** rama
+  `claude/practical-brown-ya1svc`, commit `0a59212`, 219/219 pruebas
+  pasando tras corregir la regresión de RF-01 (`APP_IDENTITY.members`)
+  y RF-02 (test de sesión única desactualizado).
+- **Equipo:** 1 integrante (Mariana Tobón H.), confirmado con el
+  docente — ver `CONTRIBUTIONS.md`.
 
 ## Documentación de cierre
 

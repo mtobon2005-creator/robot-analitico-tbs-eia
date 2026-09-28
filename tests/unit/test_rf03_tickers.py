@@ -6,10 +6,12 @@ from src.tickers import (
     InvalidTicker,
     TickerNotFound,
     add_ticker,
+    add_tickers_bulk,
     is_ready_for_comparison,
     is_ready_for_single_asset,
     missing_for_comparison,
     normalize_ticker,
+    parse_ticker_list,
     remove_ticker,
 )
 
@@ -100,3 +102,46 @@ def test_add_ticker_allows_invalid_looking_test_ticker_for_fixture():
     # real (eso se valida en RF-08, no aquí).
     result = add_ticker([], "EIA_INVALID_2026")
     assert result == ["EIA_INVALID_2026"]
+
+
+def test_parse_ticker_list_splits_on_comma_space_and_newline():
+    raw = "AAPL, MSFT\nBRK.B   GOOGL,,TSLA"
+    assert parse_ticker_list(raw) == ["AAPL", "MSFT", "BRK.B", "GOOGL", "TSLA"]
+
+
+def test_parse_ticker_list_empty_text_returns_empty_list():
+    assert parse_ticker_list("   \n  ") == []
+
+
+def test_add_tickers_bulk_adds_all_valid_new_tickers():
+    collection, errors = add_tickers_bulk([], "aapl, msft brk.b")
+    assert collection == ["AAPL", "MSFT", "BRK.B"]
+    assert errors == []
+
+
+def test_add_tickers_bulk_isolates_invalid_without_blocking_others():
+    collection, errors = add_tickers_bulk([], "AAPL, BAD TICKER!, MSFT")
+    # "TICKER!" es inválido por el símbolo; "BAD" sí es válido como ticker.
+    assert "AAPL" in collection and "MSFT" in collection and "BAD" in collection
+    assert len(errors) == 1
+    assert errors[0][0] == "TICKER!"
+
+
+def test_add_tickers_bulk_isolates_duplicate_with_existing_collection():
+    collection, errors = add_tickers_bulk(["AAPL"], "aapl, msft")
+    assert collection == ["AAPL", "MSFT"]
+    assert len(errors) == 1
+    assert errors[0][0] == "AAPL"
+
+
+def test_add_tickers_bulk_isolates_duplicate_within_same_paste():
+    collection, errors = add_tickers_bulk([], "AAPL AAPL MSFT")
+    assert collection == ["AAPL", "MSFT"]
+    assert len(errors) == 1
+    assert errors[0][0] == "AAPL"
+
+
+def test_add_tickers_bulk_does_not_mutate_original_collection():
+    original = ["AAPL"]
+    add_tickers_bulk(original, "MSFT")
+    assert original == ["AAPL"]

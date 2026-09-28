@@ -9,11 +9,22 @@ VaR, comparación, exportación) y el lifecycle_worker de purga.
 """
 import streamlit as st
 import altair as alt
+import numpy as np
 import pandas as pd
 from datetime import date, timedelta
 from pathlib import Path
 
 from src import auth, sessions, audit
+from src.black_litterman import BlackLittermanError, black_litterman
+from src.portfolio import (
+    PortfolioOptimizationError,
+    efficient_frontier,
+    global_min_variance,
+    max_expected_return,
+    personal_optimum,
+    tangency_portfolio,
+)
+from src.rebalance import RebalanceError, rebalance
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
 from src.db import get_connection, init_schema
@@ -76,15 +87,20 @@ from src.horizon import (
 )
 from src.privacy import PRIVACY_NOTICE_TEXT, PRIVACY_NOTICE_VERSION
 from src.tickers import (
-    DuplicateTicker,
-    InvalidTicker,
     TickerNotFound,
-    add_ticker,
+    add_tickers_bulk,
     is_ready_for_comparison,
     is_ready_for_single_asset,
     missing_for_comparison,
     remove_ticker,
 )
+
+# Los mismos 20 tickers del fixture sintético del curso (RF-05), para
+# poder probar comparación/portafolio sin escribirlos uno por uno.
+_FIXTURE_TICKERS_PRESET = [
+    "AAPL", "AMZN", "CAT", "COST", "GOOGL", "HD", "JNJ", "JPM", "KO", "MA",
+    "MCD", "META", "MSFT", "NVDA", "PEP", "PG", "UNH", "V", "WMT", "XOM",
+]
 
 st.set_page_config(
     page_title=APP_IDENTITY.system_name,
@@ -288,20 +304,34 @@ def _render_ticker_collection() -> list[str]:
     collection: list[str] = st.session_state.setdefault("ticker_collection", [])
 
     with st.form(key="add_ticker_form", clear_on_submit=True):
-        col_input, col_btn = st.columns([4, 1])
-        with col_input:
-            raw_ticker = st.text_input(
-                "Agregar ticker", placeholder="Ej: AAPL, BRK.B, TD.TO", label_visibility="collapsed"
-            )
-        with col_btn:
-            submitted = st.form_submit_button("Agregar", use_container_width=True)
+        raw_tickers = st.text_area(
+            "Agregar ticker(s)",
+            placeholder=(
+                "Uno o varios, separados por coma, espacio o salto de línea.\n"
+                "Ej: AAPL, MSFT, BRK.B\no pega una lista completa de una vez."
+            ),
+            height=80,
+            label_visibility="collapsed",
+            key="raw_tickers_input",
+        )
+        submitted = st.form_submit_button("Agregar", use_container_width=True)
 
-    if submitted and raw_ticker:
-        try:
-            st.session_state["ticker_collection"] = add_ticker(collection, raw_ticker)
-            st.rerun()
-        except (InvalidTicker, DuplicateTicker) as exc:
-            st.error(str(exc))
+    if submitted and raw_tickers.strip():
+        new_collection, errors = add_tickers_bulk(collection, raw_tickers)
+        st.session_state["ticker_collection"] = new_collection
+        st.session_state["ticker_bulk_errors"] = errors
+        st.rerun()
+
+    bulk_errors = st.session_state.pop("ticker_bulk_errors", None)
+    if bulk_errors:
+        with st.expander(f"⚠️ {len(bulk_errors)} ticker(s) no se agregaron", expanded=True):
+            for raw, reason in bulk_errors:
+                st.write(f"- **{raw}**: {reason}")
+
+    if st.button("Cargar universo de prueba (20 activos del fixture sintético)"):
+        new_collection, _ = add_tickers_bulk(collection, " ".join(_FIXTURE_TICKERS_PRESET))
+        st.session_state["ticker_collection"] = new_collection
+        st.rerun()
 
     if collection:
         st.write(f"**{len(set(collection))} activo(s) en la colección:**")
@@ -1007,6 +1037,296 @@ def _render_comparison_and_export() -> None:
         )
 
 
+def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -> None:
+    """Mandato v2 (ver README, sección "Mandato v2"): Markowitz N
+    activos, Black-Litterman y rebalanceo simulado sobre los activos ya
+    descargados arriba. No sustituye el núcleo v1 (RF-01 a RF-22)."""
+    st.header("Portafolio v2: Markowitz, Black-Litterman y rebalanceo")
+
+    if not result or not result.ok or not date_config:
+        st.info("Descarga datos válidos arriba antes de optimizar un portafolio.")
+        return
+    if len(result.ok) < 2:
+        st.info("Necesitas al menos 2 activos válidos para optimizar un portafolio.")
+        return
+
+    tickers = sorted(result.ok.keys())
+    selected = st.multiselect(
+        "Activos a incluir en el portafolio", options=tickers, default=tickers,
+        key="portfolio_assets",
+    )
+    if len(selected) < 2:
+        st.warning("Selecciona al menos 2 activos.")
+        return
+
+    currencies = {result.ok[t].currency for t in selected}
+    if len(currencies) > 1:
+        st.error(
+            f"Los activos seleccionados tienen monedas distintas ({', '.join(sorted(currencies))}). "
+            "El mandato v2 exige conversión FX explícita (README, Mandato v2 — "
+            "aún no implementada); selecciona activos en una sola moneda."
+        )
+        return
+
+    price_df = pd.DataFrame({t: result.ok[t].prices for t in selected})
+    simple_returns = price_df.pct_change(fill_method=None)
+    common_mask = simple_returns.notna().all(axis=1)
+    simple_returns = simple_returns.loc[common_mask]
+    n_obs = len(simple_returns)
+    if n_obs < 30:
+        st.warning(
+            f"Solo {n_obs} observaciones comunes tras alinear fechas — "
+            "insuficiente para estimar Sigma con confianza (GUIA_V2, P37/P38)."
+        )
+        return
+
+    frequency = date_config["frecuencia"]
+    m = FRECUENCIAS[frequency]
+    mu_annual = simple_returns.mean().to_numpy() * m
+    Sigma_annual = simple_returns.cov(ddof=1).to_numpy() * m
+
+    st.caption(
+        f"{n_obs} observaciones comunes en {frequency.lower()} · retornos simples "
+        "(agregación de cartera, GUIA_V2 §4.1), anualizados linealmente (μ×m, Σ×m)."
+    )
+    with st.expander("Ver μ y Σ anualizados"):
+        sigma_cols = {f"Σ {t}": Sigma_annual[:, i] for i, t in enumerate(selected)}
+        st.dataframe(
+            pd.DataFrame({"Activo": selected, "μ anual": mu_annual}).assign(**sigma_cols),
+            use_container_width=True, hide_index=True,
+        )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        rf_anual = st.number_input(
+            "Tasa libre de riesgo (efectiva anual)", min_value=0.0, max_value=1.0,
+            value=0.03, step=0.005, format="%.4f", key="portfolio_rf",
+        )
+    with col2:
+        gamma = st.number_input(
+            "Gamma (aversión al riesgo del inversionista)", min_value=0.01,
+            value=5.0, step=0.5, key="portfolio_gamma",
+        )
+    bounds = [(0.0, 1.0)] * len(selected)
+
+    try:
+        gmv = global_min_variance(mu_annual, Sigma_annual, bounds=bounds)
+        tan = tangency_portfolio(mu_annual, Sigma_annual, rf_anual, bounds=bounds)
+        opt = personal_optimum(mu_annual, Sigma_annual, gamma, bounds=bounds)
+        maxret = max_expected_return(mu_annual, Sigma_annual, bounds=bounds)
+    except PortfolioOptimizationError as exc:
+        st.error(f"El solver de portafolio no convergió: {exc}")
+        return
+
+    st.markdown("**Carteras clave**")
+    carteras_rows = []
+    for nombre, res in [
+        ("Mínima varianza (GMV)", gmv),
+        ("Tangente (máx. Sharpe)", tan),
+        (f"Óptimo personal (γ={gamma:g})", opt),
+        ("Máximo retorno esperado", maxret),
+    ]:
+        row = {"Cartera": nombre, "μ anual": f"{res.expected_return:.4%}", "σ anual": f"{res.volatility:.4%}"}
+        row.update({t: f"{w:.2%}" for t, w in zip(selected, res.weights)})
+        carteras_rows.append(row)
+    st.dataframe(carteras_rows, use_container_width=True, hide_index=True)
+    st.caption(
+        "GMV depende solo de Σ, no de μ (GUIA_V2, tabla 5.1). El óptimo "
+        "personal requiere γ del inversionista — no se infiere de los "
+        "precios históricos (P57)."
+    )
+
+    st.markdown("**Frontera eficiente**")
+    targets = np.linspace(gmv.expected_return, maxret.expected_return, 12)
+    frontier_results, infeasible = efficient_frontier(mu_annual, Sigma_annual, targets, bounds=bounds)
+    if infeasible:
+        st.caption(f"{len(infeasible)} punto(s) objetivo inviable(s) bajo las cotas [0,1] por activo.")
+    if frontier_results:
+        frontier_df = pd.DataFrame(
+            {
+                "sigma": [r.volatility for r in frontier_results],
+                "mu": [r.expected_return for r in frontier_results],
+            }
+        )
+        points_df = pd.DataFrame(
+            {
+                "sigma": [gmv.volatility, tan.volatility, opt.volatility, maxret.volatility],
+                "mu": [gmv.expected_return, tan.expected_return, opt.expected_return, maxret.expected_return],
+                "cartera": ["GMV", "Tangente", "Óptimo personal", "Máx. retorno"],
+            }
+        )
+        line = alt.Chart(frontier_df).mark_line(point=True).encode(
+            x=alt.X("sigma", title="Volatilidad anualizada"),
+            y=alt.Y("mu", title="Retorno esperado anualizado"),
+        )
+        markers = alt.Chart(points_df).mark_point(size=150, filled=True, color="red").encode(
+            x="sigma", y="mu", tooltip=["cartera", "sigma", "mu"]
+        )
+        labels = alt.Chart(points_df).mark_text(dy=-12, fontSize=11).encode(x="sigma", y="mu", text="cartera")
+        st.altair_chart(line + markers + labels, use_container_width=True)
+        with st.expander("Ver puntos de la frontera en tabla (alternativa accesible al gráfico)"):
+            st.dataframe(frontier_df, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Ningún punto de la frontera fue factible con las cotas actuales.")
+
+    st.markdown("**Black-Litterman (opcional)**")
+    usar_bl = st.checkbox(
+        "Actualizar μ con Black-Litterman antes de re-optimizar", key="portfolio_use_bl"
+    )
+    bl_tan_weights = None
+    if usar_bl:
+        st.caption(
+            "w_ref por defecto es equiponderado — no hay capitalización de "
+            "mercado real disponible aquí (P66/P71). Sin una view, el "
+            "posterior conserva el prior tal cual (P2-19)."
+        )
+        n = len(selected)
+        col1, col2 = st.columns(2)
+        with col1:
+            delta = st.number_input(
+                "delta (aversión implícita del prior)", min_value=0.01, value=2.5,
+                step=0.1, key="bl_delta",
+            )
+        with col2:
+            tau = st.number_input(
+                "tau", min_value=0.001, value=0.05, step=0.01, format="%.3f", key="bl_tau"
+            )
+        w_ref = np.full(n, 1.0 / n)
+
+        agregar_view = st.checkbox("Agregar una view absoluta propia", key="bl_add_view")
+        P_view = Q_view = Omega_view = None
+        if agregar_view:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                activo_view = st.selectbox("Activo", options=selected, key="bl_view_asset")
+            with col2:
+                idx = selected.index(activo_view)
+                retorno_view = st.number_input(
+                    "Tu retorno anual esperado (tesis propia)",
+                    value=float(mu_annual[idx]), step=0.01, format="%.4f", key="bl_view_return",
+                )
+            with col3:
+                confianza_view = st.slider(
+                    "Confianza (%)", min_value=1, max_value=99, value=50, key="bl_view_confidence"
+                )
+            P_view = np.zeros((1, n))
+            P_view[0, idx] = 1.0
+            Q_view = np.array([retorno_view - rf_anual])
+            c = confianza_view / 100.0
+            var_view_prior = float((P_view @ (tau * Sigma_annual) @ P_view.T)[0, 0])
+            omega_kk = var_view_prior * (1 - c) / c
+            Omega_view = np.array([[omega_kk]])
+            st.caption(
+                f"Vista: {activo_view} = {retorno_view:.2%} total "
+                f"({Q_view[0]:.2%} en exceso sobre rf) · Omega implícita = "
+                f"{omega_kk:.6f} (más confianza → menos Omega → más peso a tu vista)."
+            )
+
+        try:
+            bl_result = black_litterman(Sigma_annual, w_ref, delta, tau, P_view, Q_view, Omega_view)
+        except BlackLittermanError as exc:
+            st.error(str(exc))
+        else:
+            mu_bl_total = bl_result.mu_excess + rf_anual
+            st.dataframe(
+                pd.DataFrame(
+                    {"Activo": selected, "μ histórico": mu_annual, "μ BL": mu_bl_total}
+                ),
+                use_container_width=True, hide_index=True,
+            )
+            try:
+                tan_bl = tangency_portfolio(
+                    mu_bl_total, bl_result.Sigma_predictive, rf_anual, bounds=bounds
+                )
+            except PortfolioOptimizationError as exc:
+                st.error(f"El solver no convergió con μ_BL: {exc}")
+            else:
+                st.write(
+                    "Tangente con μ_BL: "
+                    + ", ".join(f"{t}={w:.2%}" for t, w in zip(selected, tan_bl.weights))
+                    + f" · μ={tan_bl.expected_return:.4%} · σ={tan_bl.volatility:.4%}"
+                )
+                bl_tan_weights = tan_bl.weights
+
+    st.markdown("**Rebalanceo simulado**")
+    st.caption(
+        "Ejecución en papel únicamente (mandato v2: execution_mode "
+        "paper_only) — no envía órdenes reales."
+    )
+    target_map = {"Tangente": tan.weights, "Óptimo personal": opt.weights, "GMV": gmv.weights}
+    opciones_objetivo = ["Tangente", "Óptimo personal", "GMV"]
+    if bl_tan_weights is not None:
+        opciones_objetivo.append("Tangente con Black-Litterman")
+        target_map["Tangente con Black-Litterman"] = bl_tan_weights
+    target_choice = st.radio(
+        "Cartera objetivo a rebalancear", options=opciones_objetivo,
+        horizontal=True, key="rebalance_target_choice",
+    )
+    target_weights = target_map[target_choice]
+
+    st.write("Cantidades actuales por activo (edita según tu posición real; 0 por defecto):")
+    cantidades_actuales = []
+    cols = st.columns(len(selected))
+    for col, t in zip(cols, selected):
+        with col:
+            q = st.number_input(t, min_value=0.0, value=0.0, step=1.0, key=f"rebalance_qty_{t}")
+            cantidades_actuales.append(q)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        caja_actual = st.number_input(
+            "Caja disponible", min_value=0.0, value=10000.0, step=100.0, key="rebalance_cash"
+        )
+    with col2:
+        costo_nominal = st.number_input(
+            "Costo por nominal operado", min_value=0.0, value=0.001, step=0.0005,
+            format="%.4f", key="rebalance_cost",
+        )
+    with col3:
+        permitir_fracciones = st.checkbox("Permitir fracciones", value=True, key="rebalance_fractions")
+
+    precios_actuales = np.array([float(result.ok[t].prices.iloc[-1]) for t in selected])
+
+    if st.button("Calcular rebalanceo"):
+        try:
+            reb = rebalance(
+                cantidades=cantidades_actuales,
+                precios_nuevos=precios_actuales,
+                caja=caja_actual,
+                pesos_objetivo=target_weights,
+                costo_por_nominal=costo_nominal,
+                fracciones=permitir_fracciones,
+            )
+        except RebalanceError as exc:
+            st.error(str(exc))
+        else:
+            trade_rows = [
+                {
+                    "Activo": t,
+                    "Precio": f"{p:.4f}",
+                    "Cantidad actual": f"{q:.4f}",
+                    "Cantidad objetivo": f"{qf:.4f}",
+                    "Operación": (
+                        f"{'Comprar' if trade > 1e-9 else 'Vender' if trade < -1e-9 else 'Sin cambio'} "
+                        f"{abs(trade):.4f}"
+                    ),
+                }
+                for t, p, q, qf, trade in zip(
+                    selected, precios_actuales, cantidades_actuales,
+                    reb.cantidades_finales, reb.trades,
+                )
+            ]
+            st.dataframe(trade_rows, use_container_width=True, hide_index=True)
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Patrimonio antes", f"{reb.patrimonio_pre:,.2f}")
+            col2.metric("Patrimonio después", f"{reb.patrimonio_post:,.2f}")
+            col3.metric("Costos totales", f"{reb.costos_totales:,.2f}")
+            col4.metric("Turnover unilateral", f"{reb.turnover_unilateral:.2%}")
+            st.caption(
+                f"Caja final: {reb.caja_final:,.2f} · Nominal negociado: {reb.nominal_negociado:,.2f}"
+            )
+
+
 def _render_authenticated_view(conn) -> None:
     st.success(f"Sesión activa como **{st.user.get('name', 'usuario')}**.")
     if st.button("Cerrar sesión"):
@@ -1043,6 +1363,9 @@ def _render_authenticated_view(conn) -> None:
 
     st.divider()
     _render_comparison_and_export()
+
+    st.divider()
+    _render_portfolio_v2(st.session_state.get("fetch_result"), st.session_state.get("date_config"))
 
     st.divider()
     st.header("Núcleo obligatorio: RF-01 a RF-22 completos")

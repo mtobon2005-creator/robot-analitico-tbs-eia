@@ -1,0 +1,20 @@
+{
+  "schema": "bot-portafolios/view/v2",
+  "view_id": null,
+  "student_author": null,
+  "thesis": null,
+  "source": null,
+  "published_at": null,
+  "known_at": null,
+  "asset_order": [],
+  "P_row": [],
+  "Q_excess": null,
+  "currency": null,
+  "horizon": null,
+  "Omega_variance": null,
+  "confidence_method": null,
+  "counterevidence": null,
+  "expires_at": null,
+  "invalidation": null,
+  "status": "pendiente"
+}
