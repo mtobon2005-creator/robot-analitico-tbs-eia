@@ -25,6 +25,15 @@ from src.portfolio import (
     personal_optimum,
     tangency_portfolio,
 )
+from src.beta_capm import (
+    BetaCapmError,
+    beta_covariance,
+    beta_ols,
+    capm_ke,
+    convert_ke_by_inflation,
+    relever_beta,
+    unlever_beta,
+)
 from src.rebalance import RebalanceError, rebalance
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
@@ -1388,6 +1397,166 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
             )
 
 
+def _render_beta_capm_v2(result: FetchResult | None) -> None:
+    """Mandato v2 (M7, GUIA_V2 §8): beta manual/OLS, apalancamiento
+    (Hamada) y CAPM con extensión de país."""
+    st.header("Beta, CAPM y apalancamiento")
+
+    beta_default = 1.0
+    st.markdown("**Beta con tus datos reales**")
+    if not result or not result.ok or len(result.ok) < 2:
+        st.info(
+            "Descarga al menos 2 activos válidos arriba para calcular beta "
+            "contra un benchmark real (otro de tus activos descargados)."
+        )
+    else:
+        tickers = sorted(result.ok.keys())
+        col1, col2 = st.columns(2)
+        with col1:
+            activo = st.selectbox("Activo", options=tickers, key="beta_asset")
+        with col2:
+            bench_options = [t for t in tickers if t != activo]
+            benchmark = st.selectbox(
+                "Benchmark (otro activo ya descargado)", options=bench_options, key="beta_benchmark"
+            )
+
+        common_idx = result.ok[activo].prices.index.intersection(result.ok[benchmark].prices.index)
+        asset_returns = compute_log_returns(result.ok[activo].prices.loc[common_idx])
+        bench_returns = compute_log_returns(result.ok[benchmark].prices.loc[common_idx])
+        common_returns_idx = asset_returns.index.intersection(bench_returns.index)
+        asset_returns = asset_returns.loc[common_returns_idx].to_numpy()
+        bench_returns = bench_returns.loc[common_returns_idx].to_numpy()
+
+        try:
+            beta_cov = beta_covariance(asset_returns, bench_returns)
+            ols = beta_ols(asset_returns, bench_returns)
+        except BetaCapmError as exc:
+            st.error(str(exc))
+        else:
+            st.dataframe(
+                [
+                    {"Método": "Cov/Var", "Beta": f"{beta_cov:.4f}", "Alpha": "—", "R²": "—", "Error estándar": "—"},
+                    {
+                        "Método": "OLS con intercepto",
+                        "Beta": f"{ols.beta:.4f}",
+                        "Alpha": f"{ols.alpha:.6f}",
+                        "R²": f"{ols.r_squared:.4f}",
+                        "Error estándar": f"{ols.std_err:.4f}",
+                    },
+                ],
+                use_container_width=True, hide_index=True,
+            )
+            st.caption(
+                f"Beta de {activo} frente a {benchmark} (n={ols.n} retornos "
+                "log comunes). Cov/Var y OLS deben coincidir exactamente "
+                "para una sola variable (P98); R² bajo con pocas "
+                "observaciones no acredita precisión suficiente (P103)."
+            )
+            beta_default = beta_cov
+
+    st.markdown("**Apalancamiento (Hamada)**")
+    st.caption(
+        "Valores por defecto = caso de control Alimentos del Norte "
+        "(`v2/data/caso_alimentos_parametros.json`) — edítalos con los tuyos."
+    )
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        beta_L_input = st.number_input(
+            "Beta apalancada (del comparable)", value=float(beta_default),
+            step=0.05, format="%.4f", key="hamada_beta_l",
+        )
+    with col2:
+        tax = st.number_input(
+            "Tasa de impuesto", min_value=0.0, max_value=0.99, value=0.35,
+            step=0.01, key="hamada_tax",
+        )
+    with col3:
+        beta_D = st.number_input(
+            "Beta de la deuda (0 = sin riesgo sistemático)", value=0.0,
+            step=0.05, key="hamada_beta_d",
+        )
+    col1, col2 = st.columns(2)
+    with col1:
+        de_comparable = st.number_input(
+            "D/E del comparable (para desapalancar)", min_value=0.0, value=0.6,
+            step=0.05, key="hamada_de_comparable",
+        )
+    with col2:
+        de_objetivo = st.number_input(
+            "D/E objetivo (para reapalancar)", min_value=0.0, value=0.75,
+            step=0.05, key="hamada_de_objetivo",
+        )
+
+    beta_L_obj = None
+    try:
+        beta_U = unlever_beta(beta_L_input, tax, de_comparable, beta_D=beta_D)
+        beta_L_obj = relever_beta(beta_U, tax, de_objetivo, beta_D=beta_D)
+    except BetaCapmError as exc:
+        st.error(str(exc))
+    else:
+        col1, col2 = st.columns(2)
+        col1.metric("Beta desapalancada (beta_U)", f"{beta_U:.4f}")
+        col2.metric("Beta reapalancada a D/E objetivo", f"{beta_L_obj:.4f}")
+
+    st.markdown("**CAPM y costo de patrimonio (Ke)**")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        rf = st.number_input(
+            "rf", min_value=0.0, value=0.043, step=0.001, format="%.4f", key="capm_rf"
+        )
+    with col2:
+        erp = st.number_input(
+            "ERP (prima de mercado madura)", min_value=0.0, value=0.055,
+            step=0.001, format="%.4f", key="capm_erp",
+        )
+    with col3:
+        crp = st.number_input(
+            "CRP (riesgo país)", min_value=0.0, value=0.032, step=0.001,
+            format="%.4f", key="capm_crp",
+        )
+    with col4:
+        lam = st.number_input(
+            "lambda (exposición al riesgo país)", min_value=0.0, value=1.0,
+            step=0.1, key="capm_lambda",
+        )
+
+    beta_for_capm = beta_L_obj if beta_L_obj is not None else beta_L_input
+    ke_foreign = capm_ke(rf, beta_for_capm, erp, country_risk_premium=crp, lambda_=lam)
+    st.metric("Ke (moneda de rf)", f"{ke_foreign:.4%}")
+
+    with st.expander("Convertir Ke a otra moneda por paridad de inflación (opcional)"):
+        col1, col2 = st.columns(2)
+        with col1:
+            infl_dom = st.number_input(
+                "Inflación moneda destino", min_value=-0.5, value=0.045,
+                step=0.001, format="%.4f", key="capm_infl_dom",
+            )
+        with col2:
+            infl_for = st.number_input(
+                "Inflación moneda de origen (rf)", min_value=-0.5, value=0.025,
+                step=0.001, format="%.4f", key="capm_infl_for",
+            )
+        try:
+            ke_converted = convert_ke_by_inflation(ke_foreign, infl_dom, infl_for)
+        except BetaCapmError as exc:
+            st.error(str(exc))
+        else:
+            st.metric("Ke convertida", f"{ke_converted:.4%}")
+        st.caption(
+            "Supuesto de consistencia nominal (paridad de tasas), no una "
+            "predicción cierta de tipo de cambio (P111)."
+        )
+
+    with st.expander("Ver caso de control verificado (Alimentos del Norte)"):
+        st.write(
+            "Con `v2/data/caso_alimentos_retornos.csv` + "
+            "`caso_alimentos_parametros.json`: beta=1.5143 (comparable), "
+            "beta_U=1.0894, beta reapalancada=1.6205, Ke_USD=16.41%, "
+            "Ke_COP=18.68% — validado exactamente en "
+            "`tests/unit/test_v2_beta_capm.py`."
+        )
+
+
 def _render_authenticated_view(conn) -> None:
     st.success(f"Sesión activa como **{st.user.get('name', 'usuario')}**.")
     if st.button("Cerrar sesión"):
@@ -1427,6 +1596,9 @@ def _render_authenticated_view(conn) -> None:
 
     st.divider()
     _render_portfolio_v2(st.session_state.get("fetch_result"), st.session_state.get("date_config"))
+
+    st.divider()
+    _render_beta_capm_v2(st.session_state.get("fetch_result"))
 
     st.divider()
     st.header("Núcleo obligatorio: RF-01 a RF-22 completos")
