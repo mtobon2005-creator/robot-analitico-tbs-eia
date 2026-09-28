@@ -1074,23 +1074,28 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
     simple_returns = simple_returns.loc[common_mask]
     n_obs = len(simple_returns)
     n_assets = len(selected)
+    frequency = date_config["frecuencia"]
+    m = FRECUENCIAS[frequency]
     # Con T observaciones y N activos, Sigma (NxN) es singular si T<=N y
     # queda mal condicionada si T no es varias veces N (GUIA_V2, P37/P38:
     # "qué cambia cuando N se aproxima a T"). Exigir un mínimo proporcional
     # a N evita un Sigma casi singular que solo pasaría un umbral fijo.
+    # Cualquier frecuencia sirve — Mensual solo necesita un rango de
+    # fechas más amplio para juntar las mismas observaciones que Diaria
+    # junta en pocos meses.
     min_obs_required = max(30, 3 * n_assets)
     if n_obs < min_obs_required:
+        years_needed = min_obs_required / m
         st.warning(
             f"Solo {n_obs} observaciones comunes tras alinear fechas para "
             f"{n_assets} activos — se necesitan al menos {min_obs_required} "
             "(≈3× el número de activos) para que Σ no quede casi singular "
-            "(GUIA_V2, P37/P38). Sube a 'Fechas, frecuencia y horizonte' y "
-            "cambia a frecuencia **Diaria** y/o amplía el rango de fechas."
+            f"(GUIA_V2, P37/P38). Con frecuencia **{frequency.lower()}** "
+            f"({m} periodos/año) eso equivale a un rango de al menos "
+            f"**{years_needed:.1f} años** — amplía 'Fecha inicial' arriba "
+            "(o cambia a una frecuencia más densa) y vuelve a descargar."
         )
         return
-
-    frequency = date_config["frecuencia"]
-    m = FRECUENCIAS[frequency]
     mu_annual = simple_returns.mean().to_numpy() * m
     Sigma_annual = simple_returns.cov(ddof=1).to_numpy() * m
 
