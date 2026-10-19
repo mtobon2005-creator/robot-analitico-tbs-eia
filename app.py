@@ -1716,15 +1716,6 @@ def _render_authenticated_view(conn) -> None:
     st.divider()
     _render_beta_capm_v2(st.session_state.get("fetch_result"))
 
-    st.divider()
-    st.header("Núcleo obligatorio: RF-01 a RF-22 completos")
-    st.write(
-        "Falta cerrar la infraestructura no cubierta por la interfaz "
-        "(lifecycle_worker de purga, RNF-01 a RNF-05) y la documentación "
-        "final (README completo, AI_USAGE.md, CONTRIBUTIONS.md, "
-        "TRACEABILITY.md, video de defensa)."
-    )
-
 
 def main() -> None:
     conn = _get_shared_connection()
