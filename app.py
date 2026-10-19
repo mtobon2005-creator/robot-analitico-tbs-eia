@@ -1483,10 +1483,6 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         mime="application/json",
         key="portfolio_trace_download",
     )
-    st.caption(
-        "`student_decision` queda vacío a propósito — anota en tu README/BITACORA "
-        "por qué elegiste estos parámetros (P154), la IA no lo inventa."
-    )
 
 
 def _render_beta_capm_v2(result: FetchResult | None) -> None:
