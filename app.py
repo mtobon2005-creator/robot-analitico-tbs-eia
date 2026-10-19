@@ -116,6 +116,15 @@ _FIXTURE_TICKERS_PRESET = [
     "MCD", "META", "MSFT", "NVDA", "PEP", "PG", "UNH", "V", "WMT", "XOM",
 ]
 
+# Universo ampliado de 50 large caps reales (superset del anterior, más
+# variedad de sectores) — solo tiene datos en el fixture sintético para
+# los 20 de arriba; los 30 adicionales requieren Yahoo Finance real.
+_EXTENDED_TICKERS_PRESET = _FIXTURE_TICKERS_PRESET + [
+    "BAC", "WFC", "GS", "MS", "AXP", "BRK-B", "DIS", "NKE", "SBUX", "TSLA",
+    "ORCL", "ADBE", "CRM", "INTC", "CSCO", "AMD", "QCOM", "IBM", "PFE", "MRK",
+    "ABBV", "LLY", "TMO", "ABT", "CVX", "BA", "GE", "HON", "UPS", "VZ",
+]
+
 st.set_page_config(
     page_title=APP_IDENTITY.system_name,
     page_icon="📊",
@@ -342,10 +351,22 @@ def _render_ticker_collection() -> list[str]:
             for raw, reason in bulk_errors:
                 st.write(f"- **{raw}**: {reason}")
 
-    if st.button("Cargar universo de prueba (20 activos del fixture sintético)"):
-        new_collection, _ = add_tickers_bulk(collection, " ".join(_FIXTURE_TICKERS_PRESET))
-        st.session_state["ticker_collection"] = new_collection
-        st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Cargar universo de prueba (20 activos del fixture sintético)"):
+            new_collection, _ = add_tickers_bulk(collection, " ".join(_FIXTURE_TICKERS_PRESET))
+            st.session_state["ticker_collection"] = new_collection
+            st.rerun()
+    with col2:
+        if st.button("Cargar universo ampliado (50 — requiere Yahoo Finance real)"):
+            new_collection, _ = add_tickers_bulk(collection, " ".join(_EXTENDED_TICKERS_PRESET))
+            st.session_state["ticker_collection"] = new_collection
+            st.rerun()
+    st.caption(
+        "El universo ampliado solo tiene precios en el fixture sintético "
+        "para los primeros 20 — los 30 adicionales necesitan 'Yahoo "
+        "Finance (datos reales)' como fuente abajo."
+    )
 
     if collection:
         st.write(f"**{len(set(collection))} activo(s) en la colección:**")
