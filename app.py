@@ -1565,6 +1565,7 @@ def _render_beta_capm_v2(result: FetchResult | None) -> None:
             step=0.05, key="hamada_de_objetivo",
         )
 
+    beta_U = None
     beta_L_obj = None
     try:
         beta_U = unlever_beta(beta_L_input, tax, de_comparable, beta_D=beta_D)
@@ -1624,6 +1625,43 @@ def _render_beta_capm_v2(result: FetchResult | None) -> None:
             "Supuesto de consistencia nominal (paridad de tasas), no una "
             "predicción cierta de tipo de cambio (P111)."
         )
+
+    st.markdown("**Meta de utilidad: beta desapalancada vs. reapalancada**")
+    st.caption(
+        "Ke×patrimonio_libros es una meta PRESUPUESTAL del caso, no "
+        "equivalencia general entre ROE contable y rentabilidad exigida "
+        "de mercado (GUIA_V2 §9.1) — compara el piso de rentabilidad "
+        "exigido si la empresa operara sin deuda (β desapalancada) "
+        "contra el exigido con su apalancamiento real (β reapalancada)."
+    )
+    patrimonio_libros = st.number_input(
+        "Patrimonio en libros", min_value=0.0, value=60000.0, step=1000.0,
+        key="capm_patrimonio_libros",
+    )
+    if beta_U is None or beta_L_obj is None:
+        st.info("Resuelve primero el bloque de Hamada arriba (desapalancar/reapalancar) para ver esta comparación.")
+    else:
+        try:
+            filas_meta = []
+            for nombre, beta_i in [("Sector (β desapalancada)", beta_U), ("Empresa (β reapalancada)", beta_L_obj)]:
+                ke_sin_pais = capm_ke(rf, beta_i, erp)
+                ke_con_pais = capm_ke(rf, beta_i, erp, country_risk_premium=crp, lambda_=lam)
+                ke_cop_i = convert_ke_by_inflation(ke_con_pais, infl_dom, infl_for)
+                filas_meta.append(
+                    {
+                        "Escenario": nombre,
+                        "Beta": f"{beta_i:.4f}",
+                        "Ke (sin país)": f"{ke_sin_pais:.2%}",
+                        "Utilidad req. (sin país)": f"{ke_sin_pais*patrimonio_libros:,.0f}",
+                        "Ke + país": f"{ke_con_pais:.2%}",
+                        "Ke (moneda local)": f"{ke_cop_i:.2%}",
+                        "Utilidad req. (moneda local)": f"{ke_cop_i*patrimonio_libros:,.0f}",
+                    }
+                )
+        except BetaCapmError as exc:
+            st.error(str(exc))
+        else:
+            st.dataframe(filas_meta, use_container_width=True, hide_index=True)
 
     with st.expander("Ver caso de control verificado (Alimentos del Norte)"):
         st.write(

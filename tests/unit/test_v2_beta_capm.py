@@ -158,3 +158,34 @@ def test_convert_ke_by_inflation_no_change_when_inflations_equal():
 def test_convert_ke_by_inflation_rejects_impossible_foreign_inflation():
     with pytest.raises(BetaCapmError, match="inflation_foreign"):
         convert_ke_by_inflation(0.10, inflation_domestic=0.03, inflation_foreign=-1.0)
+
+
+def test_meta_utilidad_sector_vs_empresa_matches_manual_control(caso_parametros):
+    """Comparación beta desapalancada ("Sector") vs reapalancada
+    ("Empresa") y su meta de utilidad (Ke*patrimonio_libros, GUIA_V2
+    §9.1) — control derivado a mano, verificado numéricamente."""
+    beta_U = 1.0894141829393627
+    beta_L_obj = 1.620503597122302
+    rf = caso_parametros["rf_USD"]
+    erp = caso_parametros["erp_madura"]
+    crp = caso_parametros["proxy_pais"]
+    lam = caso_parametros["lambda"]
+    infl_dom = caso_parametros["inflacion_COL"]
+    infl_for = caso_parametros["inflacion_USA"]
+    patrimonio = caso_parametros["patrimonio_libros"]
+
+    # Sector (beta desapalancada): CAPM~10.29%, +EMBI~13.49%, cop~15.71%.
+    ke_sector_sin_pais = capm_ke(rf, beta_U, erp)
+    ke_sector_con_pais = capm_ke(rf, beta_U, erp, country_risk_premium=crp, lambda_=lam)
+    ke_sector_cop = convert_ke_by_inflation(ke_sector_con_pais, infl_dom, infl_for)
+    assert ke_sector_sin_pais == pytest.approx(0.10291778006166494, abs=1e-9)
+    assert ke_sector_con_pais == pytest.approx(0.13491778006166494, abs=1e-9)
+    assert ke_sector_cop == pytest.approx(0.15706251723359999, abs=1e-9)
+    assert ke_sector_cop * patrimonio == pytest.approx(9423.751034015999, abs=1e-4)
+
+    # Empresa (beta reapalancada): CAPM~13.21%, +EMBI~16.41%, cop~18.68%.
+    ke_empresa_sin_pais = capm_ke(rf, beta_L_obj, erp)
+    ke_empresa_con_pais = capm_ke(rf, beta_L_obj, erp, country_risk_premium=crp, lambda_=lam)
+    ke_empresa_cop = convert_ke_by_inflation(ke_empresa_con_pais, infl_dom, infl_for)
+    assert ke_empresa_sin_pais * patrimonio == pytest.approx(7927.661870503597, abs=1e-4)
+    assert ke_empresa_cop * patrimonio == pytest.approx(11210.543077732935, abs=1e-4)
