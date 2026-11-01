@@ -10,6 +10,7 @@ general, por eso se resuelve con SLSQP (scipy).
 from dataclasses import dataclass
 
 import numpy as np
+from scipy import stats
 from scipy.optimize import minimize
 
 
@@ -186,6 +187,27 @@ def portfolio_log_returns(simple_returns, weights) -> np.ndarray:
     if np.any(portfolio_simple <= -1):
         raise ValueError("retorno simple de cartera <= -100% no tiene log-retorno definido")
     return np.log1p(portfolio_simple)
+
+
+def portfolio_var(expected_return: float, volatility: float, confidence: float, capital: float) -> dict:
+    """VaR paramétrico normal de la cartera a 1 año, sobre el mismo
+    retorno/volatilidad SIMPLE anualizados de Markowitz (GUIA_V2 §9,
+    ficha técnica) — no es el VaR log-normal de RF-16 (ese es por
+    activo individual y depende de un horizonte de forecasting A/B que
+    Markowitz no usa).
+
+    VaR_frac = max(0, -(mu_p - z_c*sigma_p)); VaR_$ = capital*VaR_frac.
+    """
+    if not (0 < confidence < 1):
+        raise ValueError("confidence debe estar en (0, 1)")
+    if volatility < 0:
+        raise ValueError("volatility no puede ser negativa")
+    if capital < 0:
+        raise ValueError("capital no puede ser negativo")
+
+    z_c = float(stats.norm.ppf(confidence))
+    fraction = max(0.0, -(float(expected_return) - z_c * float(volatility)))
+    return {"fraction": fraction, "monetary": fraction * capital, "confidence": confidence}
 
 
 def personal_optimum(mu, Sigma, gamma, bounds=None) -> PortfolioResult:

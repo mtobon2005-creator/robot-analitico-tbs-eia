@@ -26,6 +26,7 @@ from src.portfolio import (
     max_expected_return,
     personal_optimum,
     portfolio_log_returns,
+    portfolio_var,
     tangency_portfolio,
 )
 from src.beta_capm import (
@@ -1531,9 +1532,27 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         f"Óptimo personal (γ={gamma:g})": opt.weights,
         "Máximo retorno esperado": maxret.weights,
     }
+    carteras_full = {
+        "Mínima varianza (GMV)": gmv,
+        "Tangente (máx. Sharpe)": tan,
+        f"Óptimo personal (γ={gamma:g})": opt,
+        "Máximo retorno esperado": maxret,
+    }
     if bl_tan_weights is not None:
         portfolio_weights_for_beta["Tangente con Black-Litterman"] = bl_tan_weights
-    return {"tickers": selected, "weights": portfolio_weights_for_beta}
+        carteras_full["Tangente con Black-Litterman"] = tan_bl
+    return {
+        "tickers": selected,
+        "weights": portfolio_weights_for_beta,
+        "carteras": carteras_full,
+        "rf_anual": rf_anual,
+        "gamma": gamma,
+        "frequency": frequency,
+        "n_obs": n_obs,
+        "currency": next(iter(currencies)),
+        "source": result.ok[selected[0]].source,
+        "corr_matrix": corr_matrix,
+    }
 
 
 def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | None = None) -> dict | None:
@@ -1972,6 +1991,122 @@ def _render_valuation_v2(capm_bundle: dict | None = None) -> None:
     )
 
 
+def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | None) -> None:
+    """Ficha técnica consolidada por portafolio (correo del profesor,
+    versión final) — una tarjeta-resumen inspirada en el formato de
+    ficha técnica de fondos (Superfinanciera) / fact sheet (SEC); no
+    es una plantilla oficial de ninguna de las dos, es una adaptación
+    académica con los campos que esta app ya calcula arriba."""
+    st.header("Ficha técnica del portafolio")
+
+    if not portfolio_bundle or not portfolio_bundle.get("carteras"):
+        st.info(
+            "Calcula un portafolio en la sección 'Portafolio v2: Markowitz, "
+            "Black-Litterman y rebalanceo' arriba para ver su ficha técnica."
+        )
+        return
+
+    carteras = portfolio_bundle["carteras"]
+    cartera_nombre = st.selectbox("Cartera", options=list(carteras.keys()), key="ficha_cartera")
+    cartera = carteras[cartera_nombre]
+    tickers = portfolio_bundle["tickers"]
+
+    st.caption(
+        f"Corte: {date.today().isoformat()} · Fuente: {portfolio_bundle['source']} · "
+        f"Moneda: {portfolio_bundle['currency']} · Frecuencia: "
+        f"{portfolio_bundle['frequency']} ({portfolio_bundle['n_obs']} observaciones comunes)."
+    )
+
+    st.markdown("**Composición**")
+    comp_df = pd.DataFrame(
+        {"Activo": tickers, "Peso": [f"{w:.2%}" for w in cartera.weights]}
+    )
+    st.dataframe(comp_df, use_container_width=True, hide_index=True)
+
+    st.markdown("**Perfil rendimiento-riesgo**")
+    sharpe = (
+        (cartera.expected_return - portfolio_bundle["rf_anual"]) / cartera.volatility
+        if cartera.volatility > 0 else float("nan")
+    )
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Retorno esperado anual", f"{cartera.expected_return:.2%}")
+    col2.metric("Volatilidad anual", f"{cartera.volatility:.2%}")
+    col3.metric("Sharpe (vs. rf de la sección Portafolio v2)", f"{sharpe:.3f}" if not np.isnan(sharpe) else "—")
+
+    st.markdown("**VaR paramétrico de la cartera (horizonte 1 año)**")
+    col1, col2 = st.columns(2)
+    with col1:
+        var_conf = st.selectbox("Confianza", options=[0.95, 0.99], key="ficha_var_conf")
+    with col2:
+        var_capital = st.number_input(
+            "Capital hipotético", min_value=1.0, value=10000.0, step=1000.0, key="ficha_var_capital"
+        )
+    var_result = portfolio_var(cartera.expected_return, cartera.volatility, var_conf, var_capital)
+    col1, col2 = st.columns(2)
+    col1.metric(f"VaR {int(var_conf*100)}% (fracción)", f"{var_result['fraction']:.2%}")
+    col2.metric(f"VaR {int(var_conf*100)}% (monetario)", f"{var_result['monetary']:,.2f}")
+    st.caption(
+        "VaR normal paramétrico sobre el retorno/volatilidad SIMPLE "
+        "anualizado de esta cartera (mismo supuesto que Markowitz) — "
+        "distinto del VaR log-normal por activo individual de la "
+        "sección 'Riesgo, niveles y probabilidades' (RF-16)."
+    )
+
+    st.markdown("**Diversificación**")
+    n = len(tickers)
+    corr_matrix = portfolio_bundle.get("corr_matrix")
+    if corr_matrix is not None and n > 1:
+        avg_corr = float((corr_matrix.sum() - n) / (n * (n - 1)))
+        st.metric("Correlación promedio entre activos", f"{avg_corr:.3f}")
+    else:
+        avg_corr = None
+        st.metric("Correlación promedio entre activos", "—")
+
+    beta_L_obj = capm_bundle.get("beta_L_obj") if capm_bundle else None
+    ke_show = None
+    if capm_bundle:
+        ke_show = capm_bundle.get("ke_converted") or capm_bundle.get("ke_foreign")
+    if beta_L_obj is not None or ke_show is not None:
+        st.markdown("**Beta y costo de patrimonio (de la sección Beta, CAPM y apalancamiento)**")
+        col1, col2 = st.columns(2)
+        col1.metric("Beta reapalancada", f"{beta_L_obj:.4f}" if beta_L_obj is not None else "—")
+        col2.metric("Ke", f"{ke_show:.2%}" if ke_show is not None else "—")
+    else:
+        st.caption(
+            "Calcula la sección 'Beta, CAPM y apalancamiento' arriba para "
+            "incluir beta y Ke en esta ficha."
+        )
+
+    st.caption(
+        "Resumen informativo con fines académicos — no constituye "
+        "garantía de rendimiento ni recomendación de inversión."
+    )
+
+    ficha = {
+        "cartera": cartera_nombre,
+        "fecha_corte": date.today().isoformat(),
+        "fuente": portfolio_bundle["source"],
+        "moneda": portfolio_bundle["currency"],
+        "frecuencia": portfolio_bundle["frequency"],
+        "n_obs": portfolio_bundle["n_obs"],
+        "composicion": {t: float(w) for t, w in zip(tickers, cartera.weights)},
+        "retorno_esperado_anual": float(cartera.expected_return),
+        "volatilidad_anual": float(cartera.volatility),
+        "sharpe": None if np.isnan(sharpe) else float(sharpe),
+        "var": var_result,
+        "correlacion_promedio": avg_corr,
+        "beta_reapalancada": beta_L_obj,
+        "ke": ke_show,
+    }
+    st.download_button(
+        "Descargar ficha técnica (JSON)",
+        data=json.dumps(ficha, indent=2, ensure_ascii=False),
+        file_name=f"ficha_tecnica_{cartera_nombre[:20].replace(' ', '_')}.json",
+        mime="application/json",
+        key="ficha_download",
+    )
+
+
 def _render_authenticated_view(conn) -> None:
     st.success(f"Sesión activa como **{st.user.get('name', 'usuario')}**.")
     if st.button("Cerrar sesión"):
@@ -2017,6 +2152,9 @@ def _render_authenticated_view(conn) -> None:
 
     st.divider()
     _render_valuation_v2(capm_bundle)
+
+    st.divider()
+    _render_ficha_tecnica(portfolio_bundle, capm_bundle)
 
 
 def main() -> None:

@@ -21,6 +21,7 @@ from src.portfolio import (
     max_expected_return,
     personal_optimum,
     portfolio_log_returns,
+    portfolio_var,
     tangency_portfolio,
 )
 
@@ -234,3 +235,40 @@ def test_portfolio_log_returns_rejects_weight_length_mismatch():
 def test_portfolio_log_returns_rejects_total_loss_or_worse():
     with pytest.raises(ValueError, match="log-retorno"):
         portfolio_log_returns(np.array([[-1.5, 0.0]]), [1.0, 0.0])
+
+
+# --- portfolio_var (VaR paramétrico de cartera para la ficha técnica) ------
+
+_Z_95 = 1.6448536269514722  # Phi^-1(0.95), constante tabulada estándar
+
+
+def test_portfolio_var_matches_manual_normal_formula():
+    result = portfolio_var(expected_return=0.10, volatility=0.20, confidence=0.95, capital=10000.0)
+    expected_fraction = -(0.10 - _Z_95 * 0.20)
+    assert result["fraction"] == pytest.approx(expected_fraction, abs=1e-9)
+    assert result["monetary"] == pytest.approx(expected_fraction * 10000.0, abs=1e-6)
+
+
+def test_portfolio_var_floors_at_zero_when_return_dominates_risk():
+    result = portfolio_var(expected_return=0.50, volatility=0.01, confidence=0.95, capital=10000.0)
+    assert result["fraction"] == 0.0
+    assert result["monetary"] == 0.0
+
+
+def test_portfolio_var_zero_volatility_depends_only_on_sign_of_return():
+    result = portfolio_var(expected_return=-0.02, volatility=0.0, confidence=0.95, capital=1000.0)
+    assert result["fraction"] == pytest.approx(0.02, abs=1e-12)
+
+
+def test_portfolio_var_rejects_invalid_confidence():
+    with pytest.raises(ValueError, match="confidence"):
+        portfolio_var(0.1, 0.2, confidence=1.5, capital=1000.0)
+    with pytest.raises(ValueError, match="confidence"):
+        portfolio_var(0.1, 0.2, confidence=0.0, capital=1000.0)
+
+
+def test_portfolio_var_rejects_negative_volatility_or_capital():
+    with pytest.raises(ValueError, match="volatility"):
+        portfolio_var(0.1, -0.2, confidence=0.95, capital=1000.0)
+    with pytest.raises(ValueError, match="capital"):
+        portfolio_var(0.1, 0.2, confidence=0.95, capital=-1.0)
