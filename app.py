@@ -40,6 +40,13 @@ from src.beta_capm import (
 from src.rebalance import RebalanceError, rebalance
 from src.technical import rank_by_momentum
 from src.traceability import build_trace_record
+from src.valuation import (
+    ValuationError,
+    present_value,
+    project_years,
+    terminal_value_gordon,
+    wacc,
+)
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
 from src.db import get_connection, init_schema
@@ -1529,7 +1536,7 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
     return {"tickers": selected, "weights": portfolio_weights_for_beta}
 
 
-def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | None = None) -> None:
+def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | None = None) -> dict | None:
     """Mandato v2 (M7, GUIA_V2 §8): beta manual/OLS, apalancamiento
     (Hamada) y CAPM con extensión de país. `portfolio_bundle` (de
     _render_portfolio_v2, si ya se calculó en este mismo run) habilita
@@ -1667,15 +1674,40 @@ def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | No
 
     beta_U = None
     beta_L_obj = None
+    beta_U_para_relever = None
     try:
         beta_U = unlever_beta(beta_L_input, tax, de_comparable, beta_D=beta_D)
-        beta_L_obj = relever_beta(beta_U, tax, de_objetivo, beta_D=beta_D)
     except BetaCapmError as exc:
         st.error(str(exc))
     else:
-        col1, col2 = st.columns(2)
-        col1.metric("Beta desapalancada (beta_U)", f"{beta_U:.4f}")
-        col2.metric("Beta reapalancada a D/E objetivo", f"{beta_L_obj:.4f}")
+        st.metric("Beta desapalancada del comparable (beta_U)", f"{beta_U:.4f}")
+
+        usar_beta_sector = st.checkbox(
+            "Usar en su lugar un beta sectorial de referencia externo "
+            "(ej. Damodaran) para reapalancar",
+            key="hamada_usar_beta_sector",
+        )
+        beta_U_para_relever = beta_U
+        if usar_beta_sector:
+            beta_U_para_relever = st.number_input(
+                "Beta sectorial (ingrésalo tú — esta app no lo descarga "
+                "automáticamente de Damodaran ni de ninguna otra fuente)",
+                min_value=0.0, value=float(beta_U), step=0.05, format="%.4f",
+                key="hamada_beta_sector_value",
+            )
+            st.caption(
+                "Reemplaza el beta_U calculado del comparable de arriba "
+                "únicamente para el paso de reapalancamiento — consulta tú "
+                "la fuente (ej. pages.stern.nyu.edu/~adamodar/, tabla de "
+                "betas por sector) y transcribe el valor aquí."
+            )
+
+        try:
+            beta_L_obj = relever_beta(beta_U_para_relever, tax, de_objetivo, beta_D=beta_D)
+        except BetaCapmError as exc:
+            st.error(str(exc))
+        else:
+            st.metric("Beta reapalancada a D/E objetivo", f"{beta_L_obj:.4f}")
 
     st.markdown("**CAPM y costo de patrimonio (Ke)**")
     col1, col2, col3, col4 = st.columns(4)
@@ -1703,6 +1735,7 @@ def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | No
     ke_foreign = capm_ke(rf, beta_for_capm, erp, country_risk_premium=crp, lambda_=lam)
     st.metric("Ke (moneda de rf)", f"{ke_foreign:.4%}")
 
+    ke_converted = None
     with st.expander("Convertir Ke a otra moneda por paridad de inflación (opcional)"):
         col1, col2 = st.columns(2)
         with col1:
@@ -1738,12 +1771,12 @@ def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | No
         "Patrimonio en libros", min_value=0.0, value=60000.0, step=1000.0,
         key="capm_patrimonio_libros",
     )
-    if beta_U is None or beta_L_obj is None:
+    if beta_U_para_relever is None or beta_L_obj is None:
         st.info("Resuelve primero el bloque de Hamada arriba (desapalancar/reapalancar) para ver esta comparación.")
     else:
         try:
             filas_meta = []
-            for nombre, beta_i in [("Sector (β desapalancada)", beta_U), ("Empresa (β reapalancada)", beta_L_obj)]:
+            for nombre, beta_i in [("Sector (β desapalancada)", beta_U_para_relever), ("Empresa (β reapalancada)", beta_L_obj)]:
                 ke_sin_pais = capm_ke(rf, beta_i, erp)
                 ke_con_pais = capm_ke(rf, beta_i, erp, country_risk_premium=crp, lambda_=lam)
                 ke_cop_i = convert_ke_by_inflation(ke_con_pais, infl_dom, infl_for)
@@ -1762,6 +1795,181 @@ def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | No
             st.error(str(exc))
         else:
             st.dataframe(filas_meta, use_container_width=True, hide_index=True)
+
+    return {
+        "ke_foreign": ke_foreign,
+        "ke_converted": ke_converted,
+        "rf": rf,
+        "tax": tax,
+        "de_objetivo": de_objetivo,
+        "beta_L_obj": beta_L_obj,
+    }
+
+
+def _render_valuation_v2(capm_bundle: dict | None = None) -> None:
+    """Mandato v2 (M8, GUIA_V2 §9): FCFF -> WACC -> valor terminal ->
+    valor del patrimonio, GENERALIZADO a cualquier caso — ningún valor
+    viene precargado de un caso específico; `capm_bundle` (de
+    _render_beta_capm_v2, si ya se calculó en este mismo run) solo
+    sugiere un Ke/D-E/tax de partida, editables."""
+    st.header("Valoración: de CAPM al valor del patrimonio")
+    st.caption(
+        "Generalizado — ingresa los parámetros de tu propio caso abajo; "
+        "nada viene precargado de un caso particular (GUIA_V2 §9)."
+    )
+
+    st.markdown("**1. Proyección operativa** (bucle ventas-capacidad-CAPEX-depreciación)")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        sales0 = st.number_input(
+            "Ventas año 0", min_value=0.01, value=100000.0, step=1000.0, key="val_sales0"
+        )
+    with col2:
+        capacity0 = st.number_input(
+            "Capacidad de ventas año 0", min_value=0.01, value=120000.0, step=1000.0, key="val_capacity0"
+        )
+    with col3:
+        variable_cost_rate = st.number_input(
+            "Costo variable (% de ventas)", min_value=0.0, max_value=0.99, value=0.6,
+            step=0.01, key="val_varcost",
+        )
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        fixed_costs = st.number_input(
+            "Gastos fijos", min_value=0.0, value=15000.0, step=500.0, key="val_fixed"
+        )
+    with col2:
+        depreciation0 = st.number_input(
+            "Depreciación año 0", min_value=0.0, value=6000.0, step=100.0, key="val_dep0"
+        )
+    with col3:
+        tax_default = capm_bundle.get("tax", 0.35) if capm_bundle else 0.35
+        tax_val = st.number_input(
+            "Tasa de impuesto", min_value=0.0, max_value=0.99, value=float(tax_default),
+            step=0.01, key="val_tax",
+        )
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        nwc_sales_rate = st.number_input(
+            "NWC (% de ventas)", min_value=0.0, max_value=1.0, value=0.1, step=0.01, key="val_nwc"
+        )
+    with col2:
+        capex_per_unit_expansion = st.number_input(
+            "CAPEX por unidad de capacidad adicional", min_value=0.0, value=0.7,
+            step=0.05, key="val_capex_unit",
+        )
+    with col3:
+        useful_life_years = st.number_input(
+            "Vida útil de la expansión (años)", min_value=1, value=10, step=1, key="val_life"
+        )
+
+    horizonte = st.slider(
+        "Horizonte de proyección (años)", min_value=1, max_value=10, value=5, key="val_horizon"
+    )
+    st.write("Crecimiento de ventas por año:")
+    sales_growth_rates = []
+    for i, col in enumerate(st.columns(horizonte), start=1):
+        with col:
+            g = st.number_input(
+                f"Año {i}", min_value=-0.99, value=0.05, step=0.01, format="%.4f",
+                key=f"val_growth_{i}",
+            )
+            sales_growth_rates.append(g)
+
+    try:
+        projections = project_years(
+            sales_growth_rates=sales_growth_rates, sales0=sales0, capacity0=capacity0,
+            variable_cost_rate=variable_cost_rate, fixed_costs=fixed_costs,
+            depreciation0=depreciation0, tax=tax_val, nwc_sales_rate=nwc_sales_rate,
+            capex_per_unit_expansion=capex_per_unit_expansion,
+            useful_life_years=int(useful_life_years),
+        )
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+
+    st.dataframe(
+        [
+            {
+                "Año": p.year, "Ventas": f"{p.sales:,.0f}", "EBIT": f"{p.ebit:,.0f}",
+                "Depreciación": f"{p.depreciation:,.0f}", "CAPEX": f"{p.capex:,.0f}",
+                "ΔNWC": f"{p.delta_nwc:,.0f}", "FCFF": f"{p.fcff:,.0f}",
+                "Capacidad fin de año": f"{p.capacity_end:,.0f}",
+            }
+            for p in projections
+        ],
+        use_container_width=True, hide_index=True,
+    )
+
+    st.markdown("**2. WACC**")
+    ke_default = 0.12
+    de_default = 0.75
+    if capm_bundle:
+        ke_default = capm_bundle.get("ke_converted") or capm_bundle.get("ke_foreign") or ke_default
+        de_default = capm_bundle.get("de_objetivo") or de_default
+        st.caption(
+            "Ke y D/E sugeridos a partir de la sección de Beta/CAPM de "
+            "arriba — edítalos si tu caso usa otros valores."
+        )
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        ke = st.number_input(
+            "Ke (costo de patrimonio)", min_value=0.0, value=float(ke_default),
+            step=0.001, format="%.4f", key="val_ke",
+        )
+    with col2:
+        kd = st.number_input(
+            "Kd (costo de deuda, antes de impuesto)", min_value=0.0, value=0.09,
+            step=0.001, format="%.4f", key="val_kd",
+        )
+    with col3:
+        de_val = st.number_input(
+            "D/E (estructura de capital objetivo)", min_value=0.0, value=float(de_default),
+            step=0.05, key="val_de",
+        )
+
+    try:
+        wacc_val = wacc(E=1.0, D=de_val, Ke=ke, Kd=kd, tax=tax_val)
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+    st.metric("WACC", f"{wacc_val:.4%}")
+
+    st.markdown("**3. Valor terminal y valor del patrimonio**")
+    col1, col2 = st.columns(2)
+    with col1:
+        g_terminal = st.number_input(
+            "g (crecimiento perpetuo terminal, < WACC)", min_value=-0.5, value=0.03,
+            step=0.005, format="%.4f", key="val_g",
+        )
+    with col2:
+        deuda_neta = st.number_input(
+            "Deuda neta (firma -> patrimonio)", min_value=0.0, value=0.0,
+            step=1000.0, key="val_netdebt",
+        )
+
+    fcff_series = [p.fcff for p in projections]
+    try:
+        fcff_next = fcff_series[-1] * (1 + g_terminal)
+        tv = terminal_value_gordon(fcff_next, wacc_val, g_terminal)
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+
+    cashflows_con_tv = list(fcff_series)
+    cashflows_con_tv[-1] += tv
+    valor_firma = present_value(cashflows_con_tv, wacc_val)
+    valor_patrimonio = valor_firma - deuda_neta
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Valor terminal (en el año H)", f"{tv:,.0f}")
+    col2.metric("Valor de la firma (VP de FCFF+TV)", f"{valor_firma:,.0f}")
+    col3.metric("Valor del patrimonio", f"{valor_patrimonio:,.0f}")
+    st.caption(
+        "Valor del patrimonio = VP(FCFF años 1..H + valor terminal en H, "
+        "descontados a WACC) - deuda neta. No es garantía ni "
+        "recomendación de inversión."
+    )
 
 
 def _render_authenticated_view(conn) -> None:
@@ -1805,7 +2013,10 @@ def _render_authenticated_view(conn) -> None:
     portfolio_bundle = _render_portfolio_v2(st.session_state.get("fetch_result"), st.session_state.get("date_config"))
 
     st.divider()
-    _render_beta_capm_v2(st.session_state.get("fetch_result"), portfolio_bundle)
+    capm_bundle = _render_beta_capm_v2(st.session_state.get("fetch_result"), portfolio_bundle)
+
+    st.divider()
+    _render_valuation_v2(capm_bundle)
 
 
 def main() -> None:
