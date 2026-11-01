@@ -18,13 +18,14 @@ from pathlib import Path
 
 from src import auth, sessions, audit
 from src.black_litterman import BlackLittermanError, black_litterman
-from src.covariance import shrink_to_diagonal
+from src.covariance import correlation_from_covariance, shrink_to_diagonal
 from src.portfolio import (
     PortfolioOptimizationError,
     efficient_frontier,
     global_min_variance,
     max_expected_return,
     personal_optimum,
+    portfolio_log_returns,
     tangency_portfolio,
 )
 from src.beta_capm import (
@@ -1072,7 +1073,7 @@ def _render_comparison_and_export() -> None:
         )
 
 
-def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -> None:
+def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -> dict | None:
     """Mandato v2 (ver README, sección "Mandato v2"): Markowitz N
     activos, Black-Litterman y rebalanceo simulado sobre los activos ya
     descargados arriba. No sustituye el núcleo v1 (RF-01 a RF-22)."""
@@ -1144,6 +1145,39 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
             pd.DataFrame({"Activo": selected, "μ anual": mu_annual}).assign(**sigma_cols),
             use_container_width=True, hide_index=True,
         )
+
+    st.markdown("**Matriz de correlación**")
+    corr_matrix = correlation_from_covariance(Sigma_annual)
+    corr_long = pd.DataFrame(
+        [
+            {"Activo A": selected[i], "Activo B": selected[j], "Correlación": corr_matrix[i, j]}
+            for i in range(n_assets)
+            for j in range(n_assets)
+        ]
+    )
+    heatmap = alt.Chart(corr_long).mark_rect().encode(
+        x=alt.X("Activo A:O", title=None),
+        y=alt.Y("Activo B:O", title=None),
+        color=alt.Color(
+            "Correlación:Q", scale=alt.Scale(scheme="redblue", domain=[-1, 1], reverse=True)
+        ),
+        tooltip=["Activo A", "Activo B", alt.Tooltip("Correlación:Q", format=".4f")],
+    )
+    text = alt.Chart(corr_long).mark_text(fontSize=10).encode(
+        x="Activo A:O", y="Activo B:O", text=alt.Text("Correlación:Q", format=".2f"),
+        color=alt.condition(
+            "abs(datum.Correlación) > 0.6", alt.value("white"), alt.value("black")
+        ),
+    )
+    st.altair_chart(heatmap + text, use_container_width=True)
+    with st.expander("Ver matriz de correlación en tabla (alternativa accesible al mapa de calor)"):
+        corr_df = pd.DataFrame(corr_matrix, index=selected, columns=selected)
+        st.dataframe(corr_df, use_container_width=True)
+    st.caption(
+        "rho_ij = Sigma_ij / (sigma_i x sigma_j), derivada de la misma Σ "
+        "anualizada usada en la optimización de arriba — coherente con "
+        "las carteras calculadas, no un cálculo aparte."
+    )
 
     col1, col2 = st.columns(2)
     with col1:
@@ -1484,10 +1518,23 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         key="portfolio_trace_download",
     )
 
+    portfolio_weights_for_beta = {
+        "Mínima varianza (GMV)": gmv.weights,
+        "Tangente (máx. Sharpe)": tan.weights,
+        f"Óptimo personal (γ={gamma:g})": opt.weights,
+        "Máximo retorno esperado": maxret.weights,
+    }
+    if bl_tan_weights is not None:
+        portfolio_weights_for_beta["Tangente con Black-Litterman"] = bl_tan_weights
+    return {"tickers": selected, "weights": portfolio_weights_for_beta}
 
-def _render_beta_capm_v2(result: FetchResult | None) -> None:
+
+def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | None = None) -> None:
     """Mandato v2 (M7, GUIA_V2 §8): beta manual/OLS, apalancamiento
-    (Hamada) y CAPM con extensión de país."""
+    (Hamada) y CAPM con extensión de país. `portfolio_bundle` (de
+    _render_portfolio_v2, si ya se calculó en este mismo run) habilita
+    beta contra el portafolio óptimo además de contra otro activo o un
+    índice de mercado descargado como activo más."""
     st.header("Beta, CAPM y apalancamiento")
 
     beta_default = 1.0
@@ -1499,48 +1546,92 @@ def _render_beta_capm_v2(result: FetchResult | None) -> None:
         )
     else:
         tickers = sorted(result.ok.keys())
+        st.caption(
+            "Para beta frente a un índice de mercado, descárgalo como un "
+            "activo más arriba (ej. ^GSPC para S&P 500, ^IXIC para "
+            "Nasdaq, ^DJI para Dow Jones) y elígelo como benchmark aquí."
+        )
+        bench_mode_options = ["Otro activo descargado"]
+        has_portfolio = bool(portfolio_bundle and len(portfolio_bundle.get("tickers", [])) >= 2)
+        if has_portfolio:
+            bench_mode_options.append("Portafolio óptimo (sección anterior)")
+        bench_mode = (
+            st.radio("Tipo de benchmark", options=bench_mode_options, horizontal=True, key="beta_bench_mode")
+            if len(bench_mode_options) > 1 else bench_mode_options[0]
+        )
+
         col1, col2 = st.columns(2)
         with col1:
             activo = st.selectbox("Activo", options=tickers, key="beta_asset")
-        with col2:
-            bench_options = [t for t in tickers if t != activo]
-            benchmark = st.selectbox(
-                "Benchmark (otro activo ya descargado)", options=bench_options, key="beta_benchmark"
-            )
 
-        common_idx = result.ok[activo].prices.index.intersection(result.ok[benchmark].prices.index)
-        asset_returns = compute_log_returns(result.ok[activo].prices.loc[common_idx])
-        bench_returns = compute_log_returns(result.ok[benchmark].prices.loc[common_idx])
-        common_returns_idx = asset_returns.index.intersection(bench_returns.index)
-        asset_returns = asset_returns.loc[common_returns_idx].to_numpy()
-        bench_returns = bench_returns.loc[common_returns_idx].to_numpy()
-
-        try:
-            beta_cov = beta_covariance(asset_returns, bench_returns)
-            ols = beta_ols(asset_returns, bench_returns)
-        except BetaCapmError as exc:
-            st.error(str(exc))
+        bench_returns_series = None
+        benchmark_label = None
+        if bench_mode == "Portafolio óptimo (sección anterior)":
+            with col2:
+                cartera_nombre = st.selectbox(
+                    "Cartera objetivo", options=list(portfolio_bundle["weights"].keys()),
+                    key="beta_benchmark_portfolio",
+                )
+            port_tickers = portfolio_bundle["tickers"]
+            faltantes = [t for t in port_tickers if t not in result.ok]
+            if faltantes:
+                st.error(
+                    f"Faltan datos descargados para: {', '.join(faltantes)} "
+                    "(se quitaron de tus activos después de calcular el portafolio)."
+                )
+            else:
+                port_price_df = pd.DataFrame({t: result.ok[t].prices for t in port_tickers})
+                port_simple_returns = port_price_df.pct_change(fill_method=None)
+                port_common_mask = port_simple_returns.notna().all(axis=1)
+                port_simple_returns = port_simple_returns.loc[port_common_mask]
+                bench_returns_series = pd.Series(
+                    portfolio_log_returns(
+                        port_simple_returns.to_numpy(), portfolio_bundle["weights"][cartera_nombre]
+                    ),
+                    index=port_simple_returns.index,
+                )
+                benchmark_label = f"cartera «{cartera_nombre}»"
         else:
-            st.dataframe(
-                [
-                    {"Método": "Cov/Var", "Beta": f"{beta_cov:.4f}", "Alpha": "—", "R²": "—", "Error estándar": "—"},
-                    {
-                        "Método": "OLS con intercepto",
-                        "Beta": f"{ols.beta:.4f}",
-                        "Alpha": f"{ols.alpha:.6f}",
-                        "R²": f"{ols.r_squared:.4f}",
-                        "Error estándar": f"{ols.std_err:.4f}",
-                    },
-                ],
-                use_container_width=True, hide_index=True,
-            )
-            st.caption(
-                f"Beta de {activo} frente a {benchmark} (n={ols.n} retornos "
-                "log comunes). Cov/Var y OLS deben coincidir exactamente "
-                "para una sola variable (P98); R² bajo con pocas "
-                "observaciones no acredita precisión suficiente (P103)."
-            )
-            beta_default = beta_cov
+            with col2:
+                bench_options = [t for t in tickers if t != activo]
+                benchmark = st.selectbox(
+                    "Benchmark (otro activo ya descargado)", options=bench_options, key="beta_benchmark"
+                )
+            bench_returns_series = compute_log_returns(result.ok[benchmark].prices)
+            benchmark_label = benchmark
+
+        if bench_returns_series is not None:
+            asset_returns_series = compute_log_returns(result.ok[activo].prices)
+            common_returns_idx = asset_returns_series.index.intersection(bench_returns_series.index)
+            asset_returns = asset_returns_series.loc[common_returns_idx].to_numpy()
+            bench_returns = bench_returns_series.loc[common_returns_idx].to_numpy()
+
+            try:
+                beta_cov = beta_covariance(asset_returns, bench_returns)
+                ols = beta_ols(asset_returns, bench_returns)
+            except BetaCapmError as exc:
+                st.error(str(exc))
+            else:
+                st.dataframe(
+                    [
+                        {"Método": "Cov/Var", "Beta": f"{beta_cov:.4f}", "Alpha": "—", "R²": "—", "Error estándar": "—"},
+                        {
+                            "Método": "OLS con intercepto",
+                            "Beta": f"{ols.beta:.4f}",
+                            "Alpha": f"{ols.alpha:.6f}",
+                            "R²": f"{ols.r_squared:.4f}",
+                            "Error estándar": f"{ols.std_err:.4f}",
+                        },
+                    ],
+                    use_container_width=True, hide_index=True,
+                )
+                st.caption(
+                    f"Beta de {activo} frente a {benchmark_label} (n={ols.n} "
+                    "retornos log comunes). Cov/Var y OLS deben coincidir "
+                    "exactamente para una sola variable (P98); R² bajo con "
+                    "pocas observaciones no acredita precisión suficiente (P103)."
+                )
+                beta_default = beta_cov
 
     st.markdown("**Apalancamiento (Hamada)**")
     st.caption(
@@ -1711,10 +1802,10 @@ def _render_authenticated_view(conn) -> None:
     _render_comparison_and_export()
 
     st.divider()
-    _render_portfolio_v2(st.session_state.get("fetch_result"), st.session_state.get("date_config"))
+    portfolio_bundle = _render_portfolio_v2(st.session_state.get("fetch_result"), st.session_state.get("date_config"))
 
     st.divider()
-    _render_beta_capm_v2(st.session_state.get("fetch_result"))
+    _render_beta_capm_v2(st.session_state.get("fetch_result"), portfolio_bundle)
 
 
 def main() -> None:

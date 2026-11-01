@@ -47,3 +47,19 @@ def shrink_to_diagonal(Sigma_sample, delta: float) -> ShrinkageResult:
     return ShrinkageResult(
         Sigma=Sigma_shrunk, delta=delta, Sigma_sample=Sigma_sample, Sigma_target=Sigma_target
     )
+
+
+def correlation_from_covariance(Sigma) -> np.ndarray:
+    """rho_ij = Sigma_ij / (sigma_i * sigma_j). Deriva la correlación de
+    la misma Sigma ya usada en Markowitz/BL en vez de recalcularla por
+    separado, para que ambas tablas sean consistentes entre sí."""
+    Sigma = np.asarray(Sigma, dtype=float)
+    n = Sigma.shape[0]
+    if Sigma.shape != (n, n):
+        raise ValueError("Sigma debe ser NxN")
+    if not np.allclose(Sigma, Sigma.T, atol=1e-10):
+        raise ValueError("Sigma no es simétrica")
+    std = np.sqrt(np.diag(Sigma))
+    if np.any(std <= 0):
+        raise ValueError("Sigma tiene varianza no positiva en la diagonal")
+    return Sigma / np.outer(std, std)

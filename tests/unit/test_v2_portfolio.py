@@ -20,6 +20,7 @@ from src.portfolio import (
     global_min_variance,
     max_expected_return,
     personal_optimum,
+    portfolio_log_returns,
     tangency_portfolio,
 )
 
@@ -203,3 +204,33 @@ def test_frontier_twenty_assets_monotonic_and_feasible(synthetic_universe):
         _assert_valid_result(r, len(assets))
     volatilities = [r.volatility for r in results]
     assert volatilities == sorted(volatilities)
+
+
+# --- portfolio_log_returns (benchmark para beta vs. portafolio óptimo) -----
+
+def test_portfolio_log_returns_matches_manual_weighted_aggregation():
+    simple_returns = np.array([[0.10, -0.02], [0.05, 0.03]])
+    weights = np.array([0.3, 0.7])
+    # Agregación en espacio simple: fila0=0.3*0.10+0.7*(-0.02)=0.016;
+    # fila1=0.3*0.05+0.7*0.03=0.036. Luego a log: ln(1+r).
+    expected = np.log([1.016, 1.036])
+    result = portfolio_log_returns(simple_returns, weights)
+    np.testing.assert_allclose(result, expected, atol=1e-12)
+
+
+def test_portfolio_log_returns_equal_weights_is_simple_average_then_log():
+    simple_returns = np.array([[0.10, 0.20], [-0.05, 0.05]])
+    weights = np.array([0.5, 0.5])
+    expected = np.log([1.15, 1.00])
+    result = portfolio_log_returns(simple_returns, weights)
+    np.testing.assert_allclose(result, expected, atol=1e-12)
+
+
+def test_portfolio_log_returns_rejects_weight_length_mismatch():
+    with pytest.raises(ValueError, match="weights"):
+        portfolio_log_returns(np.zeros((3, 2)), [1.0, 0.0, 0.0])
+
+
+def test_portfolio_log_returns_rejects_total_loss_or_worse():
+    with pytest.raises(ValueError, match="log-retorno"):
+        portfolio_log_returns(np.array([[-1.5, 0.0]]), [1.0, 0.0])

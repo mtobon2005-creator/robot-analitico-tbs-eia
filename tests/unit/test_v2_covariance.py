@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from src.covariance import shrink_to_diagonal
+from src.covariance import correlation_from_covariance, shrink_to_diagonal
 
 V2_DATA = Path(__file__).resolve().parents[2] / "v2" / "data"
 
@@ -72,3 +72,47 @@ def test_rejects_asymmetric_sigma():
 def test_rejects_non_square_sigma():
     with pytest.raises(ValueError, match="NxN"):
         shrink_to_diagonal(np.zeros((2, 3)), delta=0.5)
+
+
+# --- correlation_from_covariance -------------------------------------------
+
+def test_correlation_matches_manual_calculation():
+    # rho_01 = 0.02 / (0.2*0.3) = 1/3 exacto.
+    Sigma = np.array([[0.04, 0.02], [0.02, 0.09]])
+    corr = correlation_from_covariance(Sigma)
+    np.testing.assert_allclose(corr, [[1.0, 1 / 3], [1 / 3, 1.0]], atol=1e-12)
+
+
+def test_correlation_diagonal_is_always_one():
+    Sigma = np.array([[0.04, -0.01, 0.0], [-0.01, 0.09, 0.005], [0.0, 0.005, 0.16]])
+    corr = correlation_from_covariance(Sigma)
+    np.testing.assert_allclose(np.diag(corr), [1.0, 1.0, 1.0], atol=1e-12)
+
+
+def test_correlation_matches_numpy_corrcoef_on_synthetic_universe():
+    import pandas as pd
+
+    prices = pd.read_csv(
+        V2_DATA / "precios_sinteticos_20.csv", parse_dates=["fecha"]
+    ).set_index("fecha").sort_index()
+    returns = prices.pct_change(fill_method=None).dropna(how="any")
+    Sigma_sample = returns.cov(ddof=1).to_numpy()
+
+    corr = correlation_from_covariance(Sigma_sample)
+    expected = returns.corr().to_numpy()
+    np.testing.assert_allclose(corr, expected, atol=1e-8)
+
+
+def test_correlation_rejects_asymmetric_sigma():
+    with pytest.raises(ValueError, match="simétrica"):
+        correlation_from_covariance([[0.01, 0.004], [0.005, 0.04]])
+
+
+def test_correlation_rejects_non_square_sigma():
+    with pytest.raises(ValueError, match="NxN"):
+        correlation_from_covariance(np.zeros((2, 3)))
+
+
+def test_correlation_rejects_non_positive_variance():
+    with pytest.raises(ValueError, match="varianza"):
+        correlation_from_covariance([[0.0, 0.0], [0.0, 0.04]])
