@@ -33,6 +33,40 @@ un universo grande de activos.
 - Acceso seguro real con Google — no es una maqueta, es un sistema con
   login, sesión y auditoría funcionando de verdad.
 
+## Personalidad y diferenciación
+
+*(Borrador — ajústalo a tu criterio, es lo que el equipo de IA infirió
+de las decisiones ya tomadas en el proyecto, no un hecho verificado.)*
+
+Botiverso no vende confianza, la gana mostrando sus límites: cuando
+los datos no alcanzan, dice "no hay señal" en vez de forzar una
+respuesta; cuando compara un VaR de cartera con uno de activo
+individual, aclara que son convenciones distintas en vez de mezclarlas
+calladamente. Habla como un analista cuantitativo riguroso — directo,
+técnico, sin promesas de rentabilidad —, no como una app de trading
+que vende urgencia. Visualmente se apoya en esa misma idea: un planeta
+con anillos orbitales (explorar un universo grande de activos) y una
+gráfica ascendente, en turquesa, sin saturación.
+
+Frente a otros equipos del curso que probablemente se quedan en
+mostrar números, la diferenciación de Botiverso es declarar
+explícitamente sus propios límites matemáticos (observaciones
+insuficientes, varianza indefinida, beta sin sentido con un benchmark
+constante) como parte del producto, no como una nota al pie.
+
+## Plan de crecimiento
+
+*(Borrador — mismo criterio: ajusta plazos y alcance a tu realidad.
+Dueña de todas las fases: Mariana Tobón H., único integrante.)*
+
+| Versión | Alcance | Fecha objetivo |
+|---|---|---|
+| v1.0 (actual) | Núcleo RF-01 a RF-22 + mandato v2 completo (Markowitz, Black-Litterman, beta/CAPM, valoración, ficha técnica) — entrega de la versión final del curso | nov 2026 |
+| v1.1 | Despliegue público real en Streamlit Cloud con URL HTTPS estable (RNF-02 pendiente); validar `YFinanceProvider` contra la red real fuera del entorno de pruebas | dic 2026 |
+| v1.2 | Conversión FX explícita COP/USD para comparar activos en distinta moneda sin bloquearlos (identificado como pendiente en "Mandato v2") | ene–feb 2027 |
+| v2.0 | Black-Litterman con `w_ref` por capitalización de mercado real (en vez de equiponderado); ampliar el universo de tickers más allá de los presets curados | mar–abr 2027 |
+| v2.x | Backtesting histórico de las reglas de rebalanceo; más clases de activos (ETFs, renta fija) | según disponibilidad tras el curso |
+
 ## Estado actual (este commit)
 
 **Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker + mandato
