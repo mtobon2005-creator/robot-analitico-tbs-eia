@@ -57,7 +57,8 @@ constante) como parte del producto, no como una nota al pie.
 ## Plan de crecimiento
 
 *(Borrador — mismo criterio: ajusta plazos y alcance a tu realidad.
-Dueña de todas las fases: Mariana Tobón H., único integrante.)*
+Dueños de todas las fases, en coautoría: Mariana Tobón H. y David
+Torres.)*
 
 | Versión | Alcance | Fecha objetivo |
 |---|---|---|
@@ -180,8 +181,8 @@ v1 documentado arriba; lo extiende.
   `claude/practical-brown-ya1svc`, implementación v2 completa (Markowitz,
   Black-Litterman, rebalanceo, correlación, beta/CAPM, valoración,
   ficha técnica), 323/323 pruebas pasando.
-- **Equipo:** 1 integrante (Mariana Tobón H.), confirmado con el
-  docente — ver `CONTRIBUTIONS.md`.
+- **Equipo:** 2 integrantes (Mariana Tobón H. y David Torres),
+  confirmado con el docente — ver `CONTRIBUTIONS.md`.
 
 ## Documentación de cierre
 
@@ -189,8 +190,9 @@ v1 documentado arriba; lo extiende.
   pruebas → rúbrica → estado, con las limitaciones conocidas resumidas.
 - **`AI_USAGE.md`** — registro sesión por sesión del uso de IA
   generativa en la construcción del proyecto.
-- **`CONTRIBUTIONS.md`** — asignación de módulos; equipo de 1
-  integrante (Mariana Tobón H.), confirmado con el docente.
+- **`CONTRIBUTIONS.md`** — coautoría sin división de módulos; equipo
+  de 2 integrantes (Mariana Tobón H. y David Torres), confirmado con
+  el docente.
 
 ## Ejecutar localmente
 

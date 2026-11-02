@@ -231,10 +231,20 @@ equipo (sección 10, párrafo introductorio).
 
 ---
 
+## Composición del equipo
+
+David Torres se incorpora al equipo como coautor de la totalidad del
+proyecto (sin división de módulos — ver `CONTRIBUTIONS.md`) a partir
+de este punto. Todas las sesiones 1-16 de arriba fueron dirigidas
+únicamente por Mariana Tobón H., como registro honesto de lo que
+realmente ocurrió — no se le atribuyen retroactivamente a David Torres.
+Cualquier interacción de IA posterior a su incorporación debe
+registrarse, cuando aplique, con ambos integrantes.
+
 ## Obligaciones pendientes del equipo (sección 10.2 de la guía)
 
-Antes de la entrega, cada integrante debe, para los módulos que le
-correspondan según `CONTRIBUTIONS.md`:
+Antes de la entrega, cada integrante debe, para **cualquier** módulo
+(este equipo decidió no dividirse el proyecto — ver `CONTRIBUTIONS.md`):
 
 1. **Comprender, revisar y probar** cada función incorporada — no
    basta con que las pruebas automatizadas pasen; cada integrante debe

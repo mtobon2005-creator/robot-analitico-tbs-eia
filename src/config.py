@@ -26,12 +26,13 @@ class AppIdentity:
 
 # --- EDITAR AQUÍ cuando se conforme el equipo (3-4 integrantes, punto 1.1 de la guía) ---
 APP_IDENTITY = AppIdentity(
-    team_name="Mariana Tobón H",
+    team_name="Mariana Tobón H. y David Torres",
     members=(
-        TeamMember(name="Integrante 1 (Mariana Tobón H)"),
+        TeamMember(name="Mariana Tobón H."),
+        TeamMember(name="David Torres"),
     ),
     system_name="Botiverso",
-    version="0.2.0",
+    version="0.2.1",
     updated_at="2026-11-02",
     avatar_alt_text="Logo de Botiverso: un planeta con anillos orbitales y una "
     "gráfica ascendente, representando el mapa rendimiento-riesgo.",
