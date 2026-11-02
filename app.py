@@ -149,17 +149,21 @@ def _get_shared_connection():
 
 def _render_identity_header() -> None:
     if _LOGO_SVG:
-        # El SVG ya trae su propio <title>/<desc> con role="img"
-        # aria-labelledby (accesible por sí mismo) — un <h1> visualmente
-        # oculto evita duplicar el nombre a la vista mientras conserva
-        # la estructura de encabezado para lectores de pantalla.
+        # st.image maneja SVG de forma nativa y confiable (a diferencia
+        # de incrustarlo crudo con st.markdown+unsafe_allow_html, que
+        # dejaba de mostrar el ícono porque el <svg> sin width/height
+        # propio cae al tamaño por defecto del navegador dentro de un
+        # <div> sin ancho forzado). El SVG trae su propio <title>/<desc>
+        # con role="img" aria-labelledby; un <h1> visualmente oculto
+        # mantiene la estructura de encabezado para lectores de pantalla
+        # sin duplicar visualmente el nombre que ya trae el logo.
         st.markdown(
             "<span style='position:absolute;width:1px;height:1px;padding:0;"
             "margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:"
-            f"nowrap;border:0'><h1>{APP_IDENTITY.system_name}</h1></span>"
-            f"<div style='max-width:420px'>{_LOGO_SVG}</div>",
+            f"nowrap;border:0'><h1>{APP_IDENTITY.system_name}</h1></span>",
             unsafe_allow_html=True,
         )
+        st.image(str(_LOGO_PATH), width=380)
     else:
         col_avatar, col_text = st.columns([1, 5])
         with col_avatar:

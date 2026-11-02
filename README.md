@@ -8,6 +8,31 @@ a RF-22, RNF-01 a RNF-05) y `v2/documentos/GUIA_V2.md` para el
 escalamiento a portafolios (Markowitz, Black-Litterman, CAPM,
 valoración).
 
+## Para quién es esto
+
+Todo inversionista o estudiante de finanzas, antes de armar un
+portafolio, necesita revisar activo por activo: cómo se ha comportado,
+qué tan riesgoso es, y si vale la pena seguir considerándolo. Hacer eso
+a mano, activo por activo, con veinte o más candidatos, es lento y
+propenso a errores.
+
+Botiverso resuelve exactamente esa etapa: la preselección individual
+de activos, antes de pensar en pesos o en construir un portafolio.
+Está pensado para un analista o estudiante que necesita filtrar rápido
+un universo grande de activos.
+
+## Propuesta de valor
+
+- Analiza un activo o compara veinte o más simultáneamente, con datos
+  reales de Yahoo Finance.
+- Calcula rendimiento, riesgo, pronóstico y niveles de decisión — todo
+  verificado matemáticamente contra los casos oficiales del curso.
+- Nunca promete más de lo que puede sostener: cuando los datos no
+  alcanzan o el modelo no tiene sentido, dice explícitamente "no hay
+  señal" en vez de inventar una recomendación.
+- Acceso seguro real con Google — no es una maqueta, es un sistema con
+  login, sesión y auditoría funcionando de verdad.
+
 ## Estado actual (este commit)
 
 **Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker**
