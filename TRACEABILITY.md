@@ -7,8 +7,12 @@ con las rutas reales del repositorio.
 
 **Cómo leer "Pruebas propias":** `archivo::cantidad` es el número de
 casos de prueba (items de pytest, incluyendo variantes parametrizadas)
-en ese archivo. La cantidad total del proyecto es **221**, todos
-pasando (`pytest tests/ -q`).
+en ese archivo. La cantidad total del proyecto es **323**, todos
+pasando (`pytest tests/ -q`) — 97 en los archivos `test_v2_*.py`
+(Markowitz, Black-Litterman, covarianza, rebalanceo, beta/CAPM,
+valoración, técnico, trazabilidad); el resto, entre el núcleo v1 y
+ampliaciones puntuales a sus archivos de prueba (ej. carga de tickers
+en bloque en `test_rf03_tickers.py`).
 
 **Convención de estado:**
 - ✅ Implementado y probado (código + tests pasando).
@@ -52,8 +56,36 @@ pasando (`pytest tests/ -q`).
 | RNF-01 | Usabilidad y accesibilidad (teclado, contraste, alt text, alternativa tabular) | Avatar con `role='img' aria-label=...`; **cada gráfico** (precio, rendimiento, drawdown, trayectoria de forecasting, mapa comparativo) tiene un expander con `st.dataframe` como alternativa tabular; jerarquía de encabezados corregida (`st.header` en vez de `st.subheader`, evita saltar de h1 a h3); navegación por teclado y foco visible heredados de los widgets nativos de Streamlit | ✅ **Auditado con Lighthouse (Chrome DevTools): 98/100 en Accessibility.** El único hallazgo (encabezados no secuenciales) ya se corrigió. |
 | RNF-02 | Arquitectura monolítica modular, configuración externa, dependencias fijadas, URL HTTPS | `requirements.txt` (versiones fijadas), `.streamlit/secrets.toml.example`, `.gitignore`, estructura `src/` modular por responsabilidad | ✅ (falta el despliegue real con URL HTTPS — pendiente de la cuenta de hosting del curso) |
 | RNF-03 | OIDC mantenido, allowlist, preconsentimiento, sesión lógica, transacción, outbox/worker, mínimo privilegio, retención y purga | `src/auth.py`, `src/consent.py`, `src/sessions.py`, `src/notifications_worker.py`, `src/lifecycle.py` | ⚠️ (ver limitaciones #1 y #4 del README) |
-| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (221/221 pruebas, 0 dependencias de red) |
+| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `v2/data/` (fixtures del escalamiento, verificados por `v2/MANIFIESTO_SHA256.json`), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (323/323 pruebas, 0 dependencias de red) |
 | RNF-05 | IA, autoría y documentación: README, AI_USAGE, CONTRIBUTIONS, TRACEABILITY, licencias, referencias APA 7 | Este archivo, `AI_USAGE.md`, `CONTRIBUTIONS.md`, `README.md` (sección Referencias), `LICENSE` | ✅ |
+
+## Escalamiento v2 (Markowitz, Black-Litterman, CAPM, valoración, ficha técnica)
+
+Sin códigos RF/G formales (el escalamiento v2 y los gaps del correo
+del profesor sobre la versión final son posteriores a la guía
+evaluativa original) — columna "Requisito" referencia GUIA_V2.md por
+sección, o el correo del profesor donde aplica.
+
+| Requisito (resumen) | Implementación | Pruebas propias | Caso de control | Estado |
+|---|---|---|---|---|
+| Markowitz N activos: GMV, tangente, óptimo personal, máximo retorno, frontera eficiente (GUIA_V2 §5) | `src/portfolio.py`, `app.py::_render_portfolio_v2` | `test_v2_portfolio.py` (20) | `v2/data/dos_activos.json` (control analítico de 2 activos, derivado a mano) + universo sintético de 20 activos | ✅ |
+| Covarianza con shrinkage hacia la diagonal (GUIA_V2 §4.2) | `src/covariance.py::shrink_to_diagonal` | `test_v2_covariance.py` (incluido, 13 en total con correlación) | PSD verificado por construcción + universo sintético de 20 activos | ✅ |
+| Matriz de correlación en vivo (correo del profesor, versión final) | `src/covariance.py::correlation_from_covariance`, `app.py::_render_portfolio_v2` | `test_v2_covariance.py` (6) | Control manual 2x2 + comparación exacta contra `pandas.DataFrame.corr()` sobre el universo sintético | ✅ |
+| Black-Litterman: prior, posterior con views, Omega (GUIA_V2 §6) | `src/black_litterman.py` | `test_v2_black_litterman.py` (9) | `v2/data/black_litterman_control.json`, derivado a mano | ✅ |
+| Rebalanceo simulado con costos y caja, punto fijo (GUIA_V2 §7) | `src/rebalance.py` | `test_v2_rebalance.py` (incluido) | `v2/data/rebalanceo_control.json` | ✅ |
+| Beta Cov/Var y OLS, apalancamiento Hamada, CAPM con riesgo país (GUIA_V2 §8) | `src/beta_capm.py`, `app.py::_render_beta_capm_v2` | `test_v2_beta_capm.py` (incluido) | Notas manuscritas de la estudiante (CAPM/beta) verificadas contra la app | ✅ |
+| Beta sectorial externo opcional (ej. Damodaran) en vez del comparable (correo del profesor, versión final) | `app.py::_render_beta_capm_v2` (checkbox + campo manual) | wiring de UI sobre `relever_beta`, ya probado | Ingresado a mano por la estudiante — la app no descarga de ninguna fuente | ✅ |
+| Beta frente a un índice de mercado o al portafolio óptimo calculado (correo del profesor, versión final) | `src/portfolio.py::portfolio_log_returns`, `app.py::_render_beta_capm_v2` | `test_v2_portfolio.py` (4, portfolio_log_returns) | Agregación simple ponderada verificada a mano, luego convertida a log | ✅ |
+| Valoración FCFF/WACC/valor terminal, GENERALIZADA (ya no atada a un caso) (GUIA_V2 §9 + correo del profesor) | `src/valuation.py`, `app.py::_render_valuation_v2` | `test_v2_valuation.py` (incluido) | `v2/data/caso_alimentos_parametros.json` (verificación de `src/valuation.py`); wiring de UI verificado con script manual end-to-end | ✅ |
+| Momentum como apoyo para elegir una view de Black-Litterman (GUIA_V2 §10.1) | `src/technical.py` | `test_v2_technical.py` (incluido) | Control manual de razón de precios | ✅ |
+| Ficha técnica consolidada por portafolio (correo del profesor, versión final) | `src/portfolio.py::portfolio_var`, `app.py::_render_ficha_tecnica` | `test_v2_portfolio.py` (5, portfolio_var) | VaR normal paramétrico verificado contra z_0.95 tabulado | ✅ |
+| Trazabilidad y exportación JSON del análisis de portafolio (GUIA_V2 §11) | `src/traceability.py`, `app.py::_render_portfolio_v2` (botón de descarga) | `test_v2_traceability.py` (incluido) | Claves del registro verificadas contra `v2/plantillas/trazabilidad.json` | ✅ |
+| Identidad visual "Botiverso": nombre, logo, tagline, propuesta de valor (correo del profesor, versión final) | `assets/logo_botiverso.svg`, `src/config.py`, `app.py::_render_identity_header`, `README.md` | N/A (identidad, sin lógica de negocio) | Diseñado y redactado por la estudiante; verificado visualmente con captura headless (Playwright) | ✅ |
+
+**Pendiente de la versión final (no técnico, fuera del alcance de este
+archivo):** plan de crecimiento con dueños y fechas; personalidad/
+diferenciación del bot frente a otros equipos — ver README, sección
+"Estado actual".
 
 ### RNF-01 — Revisión manual de accesibilidad (checklist de Lighthouse)
 

@@ -35,8 +35,8 @@ un universo grande de activos.
 
 ## Estado actual (este commit)
 
-**Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker**
-(219/219 pruebas pasando):
+**Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker + mandato
+v2 completo** (323/323 pruebas pasando):
 
 - RF-01 a RF-22: ver secciones anteriores — todo verificado contra los
   casos oficiales de la matriz de pruebas.
@@ -49,6 +49,15 @@ un universo grande de activos.
   vencidos, y reaplicación de la purga tras restaurar un respaldo
   (T-23) — nunca guarda el identificador crudo del usuario, solo un
   HMAC. Ejecutable como proceso independiente: `python -m src.lifecycle`.
+- **Mandato v2 (ver sección abajo)**: Markowitz N activos (GMV,
+  tangente, óptimo personal, máximo retorno, frontera eficiente),
+  matriz de correlación en vivo, covarianza con shrinkage, Black-
+  Litterman, rebalanceo simulado con costos, beta/CAPM/Hamada (con
+  beta sectorial externo opcional, ej. Damodaran), beta frente a un
+  índice de mercado o al portafolio óptimo calculado, valoración
+  CAPM→patrimonio generalizada (FCFF/WACC/valor terminal), momentum
+  como apoyo para Black-Litterman, ficha técnica consolidada por
+  portafolio y trazabilidad/exportación JSON.
 
 ⚠️ **Limitaciones conocidas** (documentarlas en TRACEABILITY.md):
 
@@ -64,16 +73,26 @@ un universo grande de activos.
    controla directamente (la BD/sink los provee el curso, punto 46);
    el código asume que esa infraestructura respeta esos plazos por
    configuración externa, no los aplica él mismo.
+5. El VaR de la ficha técnica de portafolio (`portfolio_var`) es un
+   VaR normal paramétrico sobre el retorno/volatilidad simple
+   anualizado de Markowitz — deliberadamente distinto del VaR
+   log-normal por activo individual de RF-16, que depende de un
+   horizonte de forecasting que Markowitz no usa.
 
-**Aún falta para el 100% de la rúbrica:**
+**Aún falta para el 100% de la rúbrica técnica:**
 - Pruebas de integración/infraestructura restantes de la sección 8
   (T-19 a T-25: Google/Microsoft con cuentas reales — ya verificado
   manualmente en local; sesión con reruns/pestañas concurrentes,
   healthcheck, accesibilidad).
 - Video de defensa de máx. 5 minutos.
-- Reemplazar los placeholders de equipo (`src/config.py`,
-  `CONTRIBUTIONS.md`) una vez esté conformado.
 - Mejoras opcionales (sección 9.1) — ninguna necesaria para 100 puntos.
+
+**Pendiente de la versión final (no técnico — decisión de la estudiante,
+no de la IA):**
+- Plan de crecimiento con dueños y fechas.
+- Personalidad/diferenciación del bot frente a otros equipos (el
+  tagline "Explora. Compara. Decide." y la identidad visual ya dan una
+  base, pero el profesor pidió algo más explícito).
 
 ## Mandato v2 (escalamiento a asignación de capital)
 
@@ -124,9 +143,9 @@ v1 documentado arriba; lo extiende.
   `yfinance` para universo y benchmark reales — sin redistribuir
   cotizaciones (ver limitación #3 de este README y GUIA_V2 §3.3).
 - **Base v1, rama, commit y pruebas:** rama
-  `claude/practical-brown-ya1svc`, commit `0a59212`, 219/219 pruebas
-  pasando tras corregir la regresión de RF-01 (`APP_IDENTITY.members`)
-  y RF-02 (test de sesión única desactualizado).
+  `claude/practical-brown-ya1svc`, implementación v2 completa (Markowitz,
+  Black-Litterman, rebalanceo, correlación, beta/CAPM, valoración,
+  ficha técnica), 323/323 pruebas pasando.
 - **Equipo:** 1 integrante (Mariana Tobón H.), confirmado con el
   docente — ver `CONTRIBUTIONS.md`.
 
@@ -136,8 +155,8 @@ v1 documentado arriba; lo extiende.
   pruebas → rúbrica → estado, con las limitaciones conocidas resumidas.
 - **`AI_USAGE.md`** — registro sesión por sesión del uso de IA
   generativa en la construcción del proyecto.
-- **`CONTRIBUTIONS.md`** — plantilla de asignación de módulos por
-  integrante (equipo aún sin conformar).
+- **`CONTRIBUTIONS.md`** — asignación de módulos; equipo de 1
+  integrante (Mariana Tobón H.), confirmado con el docente.
 
 ## Ejecutar localmente
 
