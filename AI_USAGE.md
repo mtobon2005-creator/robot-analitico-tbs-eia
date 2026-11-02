@@ -1,4 +1,4 @@
-# AI_USAGE.md — Robot Analítico TBS-EIA
+# AI_USAGE.md — Botiverso (Robot Analítico TBS-EIA)
 
 Registro de uso de inteligencia artificial generativa en este proyecto,
 conforme a la sección 10 de la guía evaluativa. Todo el código de este

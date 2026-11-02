@@ -21,6 +21,7 @@ class AppIdentity:
     version: str
     updated_at: str  # fecha de la última actualización, formato AAAA-MM-DD
     avatar_alt_text: str
+    tagline: str = ""
 
 
 # --- EDITAR AQUÍ cuando se conforme el equipo (3-4 integrantes, punto 1.1 de la guía) ---
@@ -29,12 +30,12 @@ APP_IDENTITY = AppIdentity(
     members=(
         TeamMember(name="Integrante 1 (Mariana Tobón H)"),
     ),
-    system_name="Robot Analítico TBS-EIA",
-    version="0.1.0",
-    updated_at="2026-09-14",
-    avatar_alt_text="Logo del Robot Analítico TBS-EIA: un ícono de gráfico de "
-    "dispersión estilizado sobre fondo oscuro, representando el mapa "
-    "rendimiento-riesgo.",
+    system_name="Botiverso",
+    version="0.2.0",
+    updated_at="2026-11-02",
+    avatar_alt_text="Logo de Botiverso: un planeta con anillos orbitales y una "
+    "gráfica ascendente, representando el mapa rendimiento-riesgo.",
+    tagline="Explora. Compara. Decide.",
 )
 
 # Mínimo de activos exigido por la guía (RF-03, RF-19, 5.8).

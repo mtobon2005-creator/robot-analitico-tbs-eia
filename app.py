@@ -1,11 +1,7 @@
-"""Robot Analítico TBS-EIA — punto de entrada y navegación.
+"""Botiverso — punto de entrada y navegación.
 
-Alcance de este commit: RF-01 (identidad, disclaimer) + RF-02 (acceso
-OIDC Google/Microsoft, sesión lógica, guard servidor, perfiles,
-consentimientos, auditoría, outbox de notificación).
-
-Pendiente: RF-03 en adelante (tickers, fechas, analítica, forecasting,
-VaR, comparación, exportación) y el lifecycle_worker de purga.
+Robot analítico de preselección de activos y portafolios — proyecto de
+Teoría Moderna de Portafolios, Tech Business School / Universidad EIA.
 """
 import json
 
@@ -134,9 +130,12 @@ _EXTENDED_TICKERS_PRESET = _FIXTURE_TICKERS_PRESET + [
     "ABBV", "LLY", "TMO", "ABT", "CVX", "BA", "GE", "HON", "UPS", "VZ",
 ]
 
+_LOGO_PATH = Path(__file__).parent / "assets" / "logo_botiverso.svg"
+_LOGO_SVG = _LOGO_PATH.read_text(encoding="utf-8") if _LOGO_PATH.exists() else None
+
 st.set_page_config(
     page_title=APP_IDENTITY.system_name,
-    page_icon="📊",
+    page_icon=str(_LOGO_PATH) if _LOGO_SVG else "📊",
     layout="wide",
 )
 
@@ -149,19 +148,32 @@ def _get_shared_connection():
 
 
 def _render_identity_header() -> None:
-    col_avatar, col_text = st.columns([1, 5])
-    with col_avatar:
+    if _LOGO_SVG:
+        # El SVG ya trae su propio <title>/<desc> con role="img"
+        # aria-labelledby (accesible por sí mismo) — un <h1> visualmente
+        # oculto evita duplicar el nombre a la vista mientras conserva
+        # la estructura de encabezado para lectores de pantalla.
         st.markdown(
-            f"<div role='img' aria-label='{APP_IDENTITY.avatar_alt_text}' "
-            f"style='font-size:48px'>📊</div>",
+            "<span style='position:absolute;width:1px;height:1px;padding:0;"
+            "margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:"
+            f"nowrap;border:0'><h1>{APP_IDENTITY.system_name}</h1></span>"
+            f"<div style='max-width:420px'>{_LOGO_SVG}</div>",
             unsafe_allow_html=True,
         )
-    with col_text:
-        st.title(APP_IDENTITY.system_name)
-        st.caption(
-            f"Versión {APP_IDENTITY.version} · Actualizado "
-            f"{APP_IDENTITY.updated_at} · Equipo: {APP_IDENTITY.team_name}"
-        )
+    else:
+        col_avatar, col_text = st.columns([1, 5])
+        with col_avatar:
+            st.markdown(
+                f"<div role='img' aria-label='{APP_IDENTITY.avatar_alt_text}' "
+                f"style='font-size:48px'>📊</div>",
+                unsafe_allow_html=True,
+            )
+        with col_text:
+            st.title(APP_IDENTITY.system_name)
+    st.caption(
+        f"Versión {APP_IDENTITY.version} · Actualizado "
+        f"{APP_IDENTITY.updated_at} · Equipo: {APP_IDENTITY.team_name}"
+    )
 
 
 def _render_execution_policy() -> None:

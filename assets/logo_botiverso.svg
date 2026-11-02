@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" role="img" aria-labelledby="title desc">
+  <title id="title">Botiverso</title>
+  <desc id="desc">Logo de Botiverso: un planeta con anillos orbitales y una gráfica ascendente.</desc>
+  <defs>
+    <linearGradient id="planet" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#13A89E"/><stop offset="1" stop-color="#63E0C2"/></linearGradient>
+    <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#68E0C4"/><stop offset="1" stop-color="#16A89D"/></linearGradient>
+  </defs>
+  <g transform="translate(48 28)">
+    <circle cx="132" cy="132" r="91" fill="#102A43"/>
+    <circle cx="132" cy="132" r="69" fill="url(#planet)"/>
+    <path d="M77 151c25-18 45-19 62-4 16 14 34 13 49-4v32c-17 19-37 19-54 5-17-14-36-14-57 2z" fill="#102A43" opacity=".9"/>
+    <path d="M73 150c22-17 44-21 64-5 19 15 37 13 57-5" fill="none" stroke="#F4FCFA" stroke-width="8" stroke-linecap="round"/>
+    <path d="M82 129 108 110 128 119 161 83" fill="none" stroke="#102A43" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m148 82 15 1-1 15" fill="none" stroke="#102A43" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="132" cy="132" rx="116" ry="48" transform="rotate(-27 132 132)" fill="none" stroke="url(#orbit)" stroke-width="5"/>
+    <circle cx="39" cy="184" r="8" fill="#F5B84B"/>
+    <circle cx="220" cy="78" r="6" fill="#F5B84B"/>
+  </g>
+  <text x="330" y="151" fill="#102A43" font-family="Aptos, Arial, sans-serif" font-size="76" font-weight="750" letter-spacing="-2">BOTI<tspan fill="#14A99E">VERSO</tspan></text>
+  <text x="336" y="204" fill="#456078" font-family="Aptos, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="3">INVERSIONES CON CRITERIO</text>
+  <text x="336" y="248" fill="#17A698" font-family="Aptos, Arial, sans-serif" font-size="20">Explora. Compara. Decide.</text>
+</svg>

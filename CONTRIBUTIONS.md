@@ -1,4 +1,4 @@
-# CONTRIBUTIONS.md — Robot Analítico TBS-EIA
+# CONTRIBUTIONS.md — Botiverso (Robot Analítico TBS-EIA)
 
 **Estado: equipo de 1 integrante, confirmado con el docente** (la guía
 sugiere 3-4 en el punto 1.1 "Ficha de la actividad", pero para este

@@ -1,4 +1,4 @@
-# Guía de uso — Robot Analítico TBS-EIA
+# Guía de uso — Botiverso (Robot Analítico TBS-EIA)
 
 Esta guía tiene dos partes: **instalación** (una sola vez) y **uso**
 (cada vez que quieras trabajar con el bot).

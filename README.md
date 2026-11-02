@@ -1,8 +1,12 @@
-# Robot Analítico TBS-EIA
+# Botiverso
 
-Actividad evaluativa — Teoría Moderna de Portafolios, Tech Business
-School / Universidad EIA. Ver `Guia_Evaluativa_Bot.pdf` para el alcance
-completo (RF-01 a RF-22, RNF-01 a RNF-05).
+*Explora. Compara. Decide.* — robot analítico de preselección de
+activos y portafolios. Actividad evaluativa — Teoría Moderna de
+Portafolios, Tech Business School / Universidad EIA. Ver
+`Guia_Evaluativa_Bot.pdf` para el alcance completo del núcleo v1 (RF-01
+a RF-22, RNF-01 a RNF-05) y `v2/documentos/GUIA_V2.md` para el
+escalamiento a portafolios (Markowitz, Black-Litterman, CAPM,
+valoración).
 
 ## Estado actual (este commit)
 

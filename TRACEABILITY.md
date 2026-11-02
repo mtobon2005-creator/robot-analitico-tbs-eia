@@ -1,4 +1,4 @@
-# TRACEABILITY.md — Robot Analítico TBS-EIA
+# TRACEABILITY.md — Botiverso (Robot Analítico TBS-EIA)
 
 Matriz de trazabilidad completa: requisito → dónde vive en el código →
 qué prueba lo verifica → qué criterio de rúbrica cubre → qué entregable
