@@ -193,6 +193,11 @@ v1 documentado arriba; lo extiende.
 - **`CONTRIBUTIONS.md`** — coautoría sin división de módulos; equipo
   de 2 integrantes (Mariana Tobón H. y David Torres), confirmado con
   el docente.
+- **`CHANGELOG.md`** — historial de versiones con fecha real por commit.
+- **`docs/ficha_producto.md`** y **`docs/matriz_evolucion.md`** —
+  material para la Guía de Sustentación Final.
+- **`.github/workflows/tests.yml`** — CI: corre las 339 pruebas
+  automatizadas en cada push/PR a `main`.
 
 ## Ejecutar localmente
 
