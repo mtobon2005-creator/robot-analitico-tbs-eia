@@ -166,24 +166,30 @@ def max_expected_return(mu, Sigma, bounds=None) -> PortfolioResult:
     return PortfolioResult(res.x, mu_p, sigma_p, res.success, res.message)
 
 
-def portfolio_log_returns(simple_returns, weights) -> np.ndarray:
-    """Retorno log de la cartera por periodo, para usarla como benchmark
-    de beta (GUIA_V2 §8, "beta frente al índice de mercado o el
-    portafolio óptimo").
-
-    Los retornos individuales se agregan en espacio SIMPLE porque son
-    los que se suman linealmente ponderados por peso (GUIA_V2 §4.1,
-    agregación de cartera) — un log-retorno simple ponderado no es el
-    log-retorno real de la cartera. El resultado agregado se convierte
-    a log (ln(1+r_simple)) para quedar en la misma convención que el
-    resto de los retornos de activo individual usados en beta (RF-09)."""
+def portfolio_simple_returns(simple_returns, weights) -> np.ndarray:
+    """Retorno SIMPLE de la cartera por periodo: suma ponderada de los
+    retornos simples de cada activo (GUIA_V2 §4.1, agregación de
+    cartera) — es la agregación correcta porque los retornos simples
+    sí se suman linealmente ponderados por peso; los log-retornos no."""
     simple_returns = np.asarray(simple_returns, dtype=float)
     weights = np.asarray(weights, dtype=float)
     if simple_returns.ndim != 2:
         raise ValueError("simple_returns debe ser una matriz TxN")
     if simple_returns.shape[1] != len(weights):
         raise ValueError("weights debe tener un valor por columna de simple_returns")
-    portfolio_simple = simple_returns @ weights
+    return simple_returns @ weights
+
+
+def portfolio_log_returns(simple_returns, weights) -> np.ndarray:
+    """Retorno log de la cartera por periodo, para usarla como benchmark
+    de beta (GUIA_V2 §8, "beta frente al índice de mercado o el
+    portafolio óptimo").
+
+    Los retornos individuales se agregan en espacio SIMPLE (ver
+    `portfolio_simple_returns`) y el resultado se convierte a log
+    (ln(1+r_simple)) para quedar en la misma convención que el resto
+    de los retornos de activo individual usados en beta (RF-09)."""
+    portfolio_simple = portfolio_simple_returns(simple_returns, weights)
     if np.any(portfolio_simple <= -1):
         raise ValueError("retorno simple de cartera <= -100% no tiene log-retorno definido")
     return np.log1p(portfolio_simple)

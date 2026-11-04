@@ -21,6 +21,7 @@ from src.portfolio import (
     max_expected_return,
     personal_optimum,
     portfolio_log_returns,
+    portfolio_simple_returns,
     portfolio_var,
     tangency_portfolio,
 )
@@ -205,6 +206,21 @@ def test_frontier_twenty_assets_monotonic_and_feasible(synthetic_universe):
         _assert_valid_result(r, len(assets))
     volatilities = [r.volatility for r in results]
     assert volatilities == sorted(volatilities)
+
+
+# --- portfolio_simple_returns ------------------------------------------
+
+def test_portfolio_simple_returns_matches_manual_weighted_sum():
+    simple_returns = np.array([[0.10, -0.02], [0.05, 0.03]])
+    weights = np.array([0.3, 0.7])
+    expected = np.array([0.016, 0.036])
+    result = portfolio_simple_returns(simple_returns, weights)
+    np.testing.assert_allclose(result, expected, atol=1e-12)
+
+
+def test_portfolio_simple_returns_rejects_weight_length_mismatch():
+    with pytest.raises(ValueError, match="weights"):
+        portfolio_simple_returns(np.zeros((3, 2)), [1.0, 0.0, 0.0])
 
 
 # --- portfolio_log_returns (benchmark para beta vs. portafolio óptimo) -----
