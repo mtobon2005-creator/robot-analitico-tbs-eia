@@ -219,7 +219,9 @@ python -m src.notifications_worker
 
 Para correr el worker de ciclo de vida manualmente (normalmente lo
 haría un scheduler al menos una vez al día — requiere la variable de
-entorno `LIFECYCLE_HMAC_SECRET`):
+entorno `LIFECYCLE_HMAC_SECRET`, documentada en `.env.example` junto a
+`APP_DB_PATH`; no está en `.streamlit/secrets.toml` porque se lee
+directo del entorno del sistema, no vía Streamlit):
 
 ```bash
 export LIFECYCLE_HMAC_SECRET=$(openssl rand -hex 32)  # guardar en el gestor de secretos, no perder
@@ -251,6 +253,7 @@ src/export.py                          # RF-22: exportación (precios, comparati
 src/lifecycle.py                       # RNF-03: revocación, purga programada, worker periódico
 migrations/001_init.sql               # esquema de las 8 entidades mínimas
 .streamlit/secrets.toml.example        # plantilla de credenciales OIDC (NO subir el real)
+.env.example                            # LIFECYCLE_HMAC_SECRET y APP_DB_PATH (sin secretos reales)
 tests/unit/                             # pruebas unitarias
 tests/integration/                       # pruebas de flujo completo (login atómico)
 tests/fixtures/                           # fixtures oficiales del curso (verificados por SHA256SUMS.txt)
