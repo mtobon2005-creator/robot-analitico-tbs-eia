@@ -2200,117 +2200,166 @@ def _render_valuation_v2(capm_bundle: dict | None = None) -> None:
     )
 
 
-def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | None) -> None:
-    """Ficha técnica consolidada por portafolio (correo del profesor,
-    versión final) — una tarjeta-resumen inspirada en el formato de
-    ficha técnica de fondos (Superfinanciera) / fact sheet (SEC); no
-    es una plantilla oficial de ninguna de las dos, es una adaptación
-    académica con los campos que esta app ya calcula arriba."""
-    st.header("Ficha técnica del portafolio")
+_FIC_ADVERTENCIA = (
+    'Adaptado del Artículo 3.1.1.9.3 del Decreto 1242 de 2013: "Las '
+    "obligaciones [...] relacionadas con la gestión del portafolio son "
+    "de medio y no, de resultado. Los dineros entregados [...] no son "
+    "depósitos, ni generan [...] las obligaciones propias de una "
+    "institución de depósito y no están amparados por el seguro de "
+    "depósito del Fondo de Garantías de Instituciones Financieras "
+    "(Fogafín), ni por ningún otro esquema de naturaleza. La inversión "
+    '[...] está sujeta a los riesgos de inversión, derivados de la '
+    'evolución de los precios de los activos que componen el '
+    'portafolio [...]".'
+)
 
-    if not portfolio_bundle or not portfolio_bundle.get("carteras"):
-        st.info(
-            "Calcula un portafolio en la sección 'Portafolio v2: Markowitz, "
-            "Black-Litterman y rebalanceo' arriba para ver su ficha técnica."
-        )
-        return
 
-    carteras = portfolio_bundle["carteras"]
-    cartera_nombre = st.selectbox("Cartera", options=list(carteras.keys()), key="ficha_cartera")
-    cartera = carteras[cartera_nombre]
+def _build_ficha_dict(nombre, cartera, objetivo, portfolio_bundle, capm_bundle, var_conf, var_capital) -> dict:
     tickers = portfolio_bundle["tickers"]
-
-    st.caption(
-        f"Corte: {date.today().isoformat()} · Fuente: {portfolio_bundle['source']} · "
-        f"Moneda: {portfolio_bundle['currency']} · Frecuencia: "
-        f"{portfolio_bundle['frequency']} ({portfolio_bundle['n_obs']} observaciones comunes)."
-    )
-
-    st.markdown("**Composición**")
-    comp_df = pd.DataFrame(
-        {"Activo": tickers, "Peso": [f"{w:.2%}" for w in cartera.weights]}
-    )
-    st.dataframe(comp_df, use_container_width=True, hide_index=True)
-
-    st.markdown("**Perfil rendimiento-riesgo**")
+    rf_anual = portfolio_bundle["rf_anual"]
     sharpe = (
-        (cartera.expected_return - portfolio_bundle["rf_anual"]) / cartera.volatility
-        if cartera.volatility > 0 else float("nan")
+        (cartera.expected_return - rf_anual) / cartera.volatility if cartera.volatility > 0 else None
     )
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Retorno esperado anual", f"{cartera.expected_return:.2%}")
-    col2.metric("Volatilidad anual", f"{cartera.volatility:.2%}")
-    col3.metric("Sharpe (vs. rf de la sección Portafolio v2)", f"{sharpe:.3f}" if not np.isnan(sharpe) else "—")
-
-    st.markdown("**VaR paramétrico de la cartera (horizonte 1 año)**")
-    col1, col2 = st.columns(2)
-    with col1:
-        var_conf = st.selectbox("Confianza", options=[0.95, 0.99], key="ficha_var_conf")
-    with col2:
-        var_capital = st.number_input(
-            "Capital hipotético", min_value=1.0, value=10000.0, step=1000.0, key="ficha_var_capital"
-        )
     var_result = portfolio_var(cartera.expected_return, cartera.volatility, var_conf, var_capital)
-    col1, col2 = st.columns(2)
-    col1.metric(f"VaR {int(var_conf*100)}% (fracción)", f"{var_result['fraction']:.2%}")
-    col2.metric(f"VaR {int(var_conf*100)}% (monetario)", f"{var_result['monetary']:,.2f}")
-    st.caption(
-        "VaR normal paramétrico sobre el retorno/volatilidad SIMPLE "
-        "anualizado de esta cartera (mismo supuesto que Markowitz) — "
-        "distinto del VaR log-normal por activo individual de la "
-        "sección 'Riesgo, niveles y probabilidades' (RF-16)."
-    )
-
-    st.markdown("**Diversificación**")
     n = len(tickers)
     corr_matrix = portfolio_bundle.get("corr_matrix")
-    if corr_matrix is not None and n > 1:
-        avg_corr = float((corr_matrix.sum() - n) / (n * (n - 1)))
-        st.metric("Correlación promedio entre activos", f"{avg_corr:.3f}")
-    else:
-        avg_corr = None
-        st.metric("Correlación promedio entre activos", "—")
-
+    avg_corr = float((corr_matrix.sum() - n) / (n * (n - 1))) if corr_matrix is not None and n > 1 else None
     beta_L_obj = capm_bundle.get("beta_L_obj") if capm_bundle else None
-    ke_show = None
-    if capm_bundle:
-        ke_show = capm_bundle.get("ke_converted") or capm_bundle.get("ke_foreign")
-    if beta_L_obj is not None or ke_show is not None:
-        st.markdown("**Beta y costo de patrimonio (de la sección Beta, CAPM y apalancamiento)**")
-        col1, col2 = st.columns(2)
-        col1.metric("Beta reapalancada", f"{beta_L_obj:.4f}" if beta_L_obj is not None else "—")
-        col2.metric("Ke", f"{ke_show:.2%}" if ke_show is not None else "—")
-    else:
-        st.caption(
-            "Calcula la sección 'Beta, CAPM y apalancamiento' arriba para "
-            "incluir beta y Ke en esta ficha."
-        )
-
-    st.caption(
-        "Resumen informativo con fines académicos — no constituye "
-        "garantía de rendimiento ni recomendación de inversión."
-    )
-
-    ficha = {
-        "cartera": cartera_nombre,
+    ke_show = (capm_bundle.get("ke_converted") or capm_bundle.get("ke_foreign")) if capm_bundle else None
+    return {
+        "nombre_portafolio": f"Botiverso — Cartera {nombre} (simulación académica)",
+        "objetivo_inversion": objetivo,
+        "restricciones": (
+            "Solo posiciones largas (0% <= peso <= 100% por activo); sin "
+            "apalancamiento; suma de pesos = 100%."
+        ),
         "fecha_corte": date.today().isoformat(),
+        "sociedad_administradora": "N/A — portafolio simulado académico, no es un FIC real ni administrado",
         "fuente": portfolio_bundle["source"],
         "moneda": portfolio_bundle["currency"],
         "frecuencia": portfolio_bundle["frequency"],
         "n_obs": portfolio_bundle["n_obs"],
         "composicion": {t: float(w) for t, w in zip(tickers, cartera.weights)},
-        "retorno_esperado_anual": float(cartera.expected_return),
+        "rentabilidad_esperada_anual": float(cartera.expected_return),
         "volatilidad_anual": float(cartera.volatility),
-        "sharpe": None if np.isnan(sharpe) else float(sharpe),
-        "var": var_result,
+        "sharpe": None if sharpe is None or np.isnan(sharpe) else float(sharpe),
+        "indicador_riesgo_var": var_result,
         "correlacion_promedio": avg_corr,
         "beta_reapalancada": beta_L_obj,
         "ke": ke_show,
+        "comisiones": "N/A — no hay sociedad administradora real cobrando comisión",
+        "advertencia_regulatoria": _FIC_ADVERTENCIA,
     }
+
+
+def _render_fic_card(nombre: str, objetivo: str, ficha: dict) -> None:
+    st.markdown(f"#### {ficha['nombre_portafolio']}")
+    st.caption(f"**Objetivo:** {objetivo}")
+    st.caption(f"**Restricciones:** {ficha['restricciones']}")
+    st.caption(
+        f"Corte: {ficha['fecha_corte']} · Fuente: {ficha['fuente']} · "
+        f"Moneda: {ficha['moneda']} · Frecuencia: {ficha['frecuencia']} "
+        f"({ficha['n_obs']} obs.) · Sociedad administradora: "
+        f"{ficha['sociedad_administradora']}"
+    )
+
+    comp_df = pd.DataFrame(
+        [{"Activo": t, "Peso": f"{w:.2%}"} for t, w in ficha["composicion"].items()]
+    )
+    st.dataframe(comp_df, use_container_width=True, hide_index=True)
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Rentabilidad esperada anual", f"{ficha['rentabilidad_esperada_anual']:.2%}")
+    col2.metric("Volatilidad anual", f"{ficha['volatilidad_anual']:.2%}")
+    col3.metric("Sharpe", f"{ficha['sharpe']:.3f}" if ficha["sharpe"] is not None else "—")
+
+    var_result = ficha["indicador_riesgo_var"]
+    col1, col2, col3 = st.columns(3)
+    col1.metric(
+        f"Indicador de riesgo — VaR {int(var_result['confidence']*100)}%",
+        f"{var_result['fraction']:.2%}",
+    )
+    col2.metric("Beta reapalancada", f"{ficha['beta_reapalancada']:.4f}" if ficha["beta_reapalancada"] is not None else "—")
+    col3.metric("Ke", f"{ficha['ke']:.2%}" if ficha["ke"] is not None else "—")
+    st.caption(f"**Comisiones:** {ficha['comisiones']}")
+    st.caption(f"⚠️ {ficha['advertencia_regulatoria']}")
+
+
+def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | None) -> None:
+    """Fichas técnicas de portafolio (Guía de Sustentación Final,
+    sección 4: "Ficha técnica del portafolio óptimo (tangente), de
+    mínimo riesgo y de mayor rendimiento [...] según la normatividad
+    de la Superintendencia Financiera de Colombia [...] Decreto 1242
+    de 2013, Circular Básica Jurídica y Anexo 6").
+
+    El Decreto 1242/2013 (Art. 3.1.1.9.8) exige la ficha técnica pero
+    delega su contenido exacto a la Circular Básica Jurídica / Anexo 6
+    de la Superfinanciera — texto que no se pudo descargar en este
+    entorno (red restringida). Esta ficha es una aproximación de buena
+    fe a la estructura típica de una ficha técnica de FIC colombiana,
+    con los campos que esta app puede calcular; la única parte
+    verbatim de la norma es la advertencia regulatoria del Art.
+    3.1.1.9.3 (ver `_FIC_ADVERTENCIA`). No sustituye verificar el Anexo
+    6 vigente si se requiere conformidad regulatoria estricta."""
+    st.header("Ficha técnica del portafolio")
+    st.caption(
+        "Aproximación al formato de ficha técnica de FIC (Decreto 1242 "
+        "de 2013, Art. 3.1.1.9.8) — el decreto exige la ficha pero "
+        "delega el contenido exacto a la Circular Básica Jurídica / "
+        "Anexo 6 de la Superfinanciera, no verificado en este entorno. "
+        "La advertencia regulatoria de abajo sí es texto del decreto "
+        "(Art. 3.1.1.9.3), adaptado."
+    )
+
+    if not portfolio_bundle or not portfolio_bundle.get("carteras"):
+        st.info(
+            "Calcula un portafolio en la sección 'Portafolio v2: Markowitz, "
+            "Black-Litterman y rebalanceo' arriba para ver sus fichas técnicas."
+        )
+        return
+
+    carteras = portfolio_bundle["carteras"]
+    col1, col2 = st.columns(2)
+    with col1:
+        var_conf = st.selectbox("Confianza del VaR (todas las fichas)", options=[0.95, 0.99], key="ficha_var_conf")
+    with col2:
+        var_capital = st.number_input(
+            "Capital hipotético (todas las fichas)", min_value=1.0, value=10000.0,
+            step=1000.0, key="ficha_var_capital",
+        )
+
+    obligatorias = [
+        ("Tangente (máx. Sharpe)", "tangente", "Maximizar la relación retorno-riesgo (ratio de Sharpe)."),
+        ("Mínima varianza (GMV)", "mínimo riesgo", "Minimizar la volatilidad total de la cartera."),
+        ("Máximo retorno esperado", "mayor rendimiento", "Maximizar el retorno esperado anual."),
+    ]
+    fichas_export = {}
+    st.markdown("**Fichas obligatorias: tangente, mínimo riesgo y mayor rendimiento**")
+    for clave, etiqueta, objetivo in obligatorias:
+        if clave not in carteras:
+            st.caption(f"Cartera '{clave}' no disponible en este run.")
+            continue
+        ficha = _build_ficha_dict(etiqueta, carteras[clave], objetivo, portfolio_bundle, capm_bundle, var_conf, var_capital)
+        with st.expander(f"Ficha técnica — {etiqueta}", expanded=(etiqueta == "tangente")):
+            _render_fic_card(etiqueta, objetivo, ficha)
+        fichas_export[etiqueta] = ficha
+
+    otras = [k for k in carteras if k not in {c[0] for c in obligatorias}]
+    if otras:
+        with st.expander("Ver otra cartera (ej. Black-Litterman, óptimo personal)"):
+            cartera_nombre = st.selectbox("Cartera", options=otras, key="ficha_cartera_otra")
+            objetivo_otra = "Definida por el usuario (ver sección Portafolio v2)."
+            ficha_otra = _build_ficha_dict(
+                cartera_nombre, carteras[cartera_nombre], objetivo_otra, portfolio_bundle,
+                capm_bundle, var_conf, var_capital,
+            )
+            _render_fic_card(cartera_nombre, objetivo_otra, ficha_otra)
+            fichas_export[cartera_nombre] = ficha_otra
+
     st.download_button(
-        "Descargar ficha técnica (JSON)",
-        data=json.dumps(ficha, indent=2, ensure_ascii=False),
-        file_name=f"ficha_tecnica_{cartera_nombre[:20].replace(' ', '_')}.json",
+        "Descargar las fichas técnicas (JSON)",
+        data=json.dumps(fichas_export, indent=2, ensure_ascii=False),
+        file_name="fichas_tecnicas_portafolio.json",
         mime="application/json",
         key="ficha_download",
     )
