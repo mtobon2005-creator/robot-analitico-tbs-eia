@@ -22,6 +22,7 @@ from src.portfolio import (
     max_expected_return,
     personal_optimum,
     portfolio_log_returns,
+    portfolio_simple_returns,
     portfolio_var,
     tangency_portfolio,
 )
@@ -43,6 +44,14 @@ from src.valuation import (
     project_years,
     terminal_value_gordon,
     wacc,
+)
+from src.performance import (
+    PerformanceError,
+    capital_market_line,
+    information_ratio,
+    jensens_alpha,
+    systematic_risk_share,
+    treynor_ratio,
 )
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
@@ -1316,7 +1325,22 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
             x="sigma", y="mu", tooltip=["cartera", "sigma", "mu"]
         )
         labels = alt.Chart(points_df).mark_text(dy=-12, fontSize=11).encode(x="sigma", y="mu", text="cartera")
-        st.altair_chart(line + markers + labels, use_container_width=True)
+
+        sigma_max_cml = max(float(frontier_df["sigma"].max()), tan.volatility) * 1.3
+        cml_sigma = np.linspace(0.0, sigma_max_cml, 25)
+        cml_mu = capital_market_line(rf_anual, tan.expected_return, tan.volatility, cml_sigma)
+        cml_df = pd.DataFrame({"sigma": cml_sigma, "mu": cml_mu})
+        cml_line = alt.Chart(cml_df).mark_line(strokeDash=[6, 3], color="green").encode(x="sigma", y="mu")
+
+        st.altair_chart(line + cml_line + markers + labels, use_container_width=True)
+        st.caption(
+            "Línea verde punteada: Línea del Mercado de Capitales (CML), "
+            "combinaciones de activo libre de riesgo + cartera tangente — "
+            "pendiente = Sharpe de la tangente. Para sigma > sigma_tangente "
+            "implica apalancarse a rf (tomar prestado) para invertir más "
+            "que el 100% en la tangente; este bot no ejecuta eso, es solo "
+            "la referencia teórica."
+        )
         with st.expander("Ver puntos de la frontera en tabla (alternativa accesible al gráfico)"):
             st.dataframe(frontier_df, use_container_width=True, hide_index=True)
     else:
@@ -1841,6 +1865,175 @@ def _render_beta_capm_v2(result: FetchResult | None, portfolio_bundle: dict | No
     }
 
 
+def _render_sml_desempeno_v2(
+    result: FetchResult | None, date_config: dict | None, portfolio_bundle: dict | None
+) -> None:
+    """Sustentación final, núcleo financiero de referencia: Línea del
+    Mercado de Títulos (SML, CAPM para todos los activos) y desempeño
+    de la cartera vs. benchmark (Treynor, Jensen, Information Ratio)."""
+    st.header("Línea del Mercado de Títulos (SML) y desempeño vs. benchmark")
+
+    if not result or not result.ok or len(result.ok) < 2:
+        st.info("Descarga al menos 2 activos válidos arriba para esta sección.")
+        return
+
+    tickers = sorted(result.ok.keys())
+    col1, col2 = st.columns(2)
+    with col1:
+        benchmark = st.selectbox("Benchmark / proxy de mercado", options=tickers, key="perf_benchmark")
+    with col2:
+        rf = st.number_input(
+            "rf anual", min_value=0.0, value=0.03, step=0.005, format="%.4f", key="perf_rf"
+        )
+    frequency = date_config["frecuencia"] if date_config else "Diaria"
+    m = FRECUENCIAS.get(frequency, 252)
+
+    bench_prices = result.ok[benchmark].prices
+    bench_simple = bench_prices.pct_change(fill_method=None).dropna()
+    if len(bench_simple) < 3:
+        st.warning(f"{benchmark} no tiene suficientes observaciones para usarse como benchmark.")
+        return
+    mu_m = float(bench_simple.mean() * m)
+    st.caption(
+        f"E[Rm] histórico anualizado ({benchmark}): {mu_m:.2%} · rf: {rf:.2%} · "
+        f"prima de mercado implícita (E[Rm]-rf): {mu_m - rf:.2%} · retornos "
+        "simples (misma convención de Markowitz, GUIA_V2 §4.1), no logarítmicos."
+    )
+
+    st.markdown("**SML: beta y rendimiento requerido por activo (CAPM)**")
+    rows = []
+    for t in tickers:
+        if t == benchmark:
+            continue
+        asset_simple = result.ok[t].prices.pct_change(fill_method=None).dropna()
+        common_idx = asset_simple.index.intersection(bench_simple.index)
+        if len(common_idx) < 3:
+            continue
+        a = asset_simple.loc[common_idx].to_numpy()
+        b = bench_simple.loc[common_idx].to_numpy()
+        try:
+            ols = beta_ols(a, b)
+        except BetaCapmError:
+            continue
+        mu_hist = float(asset_simple.loc[common_idx].mean() * m)
+        required = capm_ke(rf, ols.beta, mu_m - rf)
+        risk_split = systematic_risk_share(min(max(ols.r_squared, 0.0), 1.0))
+        rows.append(
+            {
+                "Activo": t, "Beta": ols.beta, "R2": ols.r_squared,
+                "Riesgo sistematico": risk_split["sistematico"],
+                "Riesgo no sistematico": risk_split["no_sistematico"],
+                "mu historico": mu_hist, "Requerido CAPM": required,
+                "Alfa (historico-requerido)": mu_hist - required,
+            }
+        )
+
+    if not rows:
+        st.info("Ningún activo tiene suficientes observaciones comunes con el benchmark elegido.")
+    else:
+        sml_df = pd.DataFrame(rows)
+        st.dataframe(
+            sml_df.assign(**{
+                "Beta": sml_df["Beta"].map("{:.4f}".format),
+                "R2": sml_df["R2"].map("{:.4f}".format),
+                "Riesgo sistematico": sml_df["Riesgo sistematico"].map("{:.2%}".format),
+                "Riesgo no sistematico": sml_df["Riesgo no sistematico"].map("{:.2%}".format),
+                "mu historico": sml_df["mu historico"].map("{:.2%}".format),
+                "Requerido CAPM": sml_df["Requerido CAPM"].map("{:.2%}".format),
+                "Alfa (historico-requerido)": sml_df["Alfa (historico-requerido)"].map("{:+.2%}".format),
+            }),
+            use_container_width=True, hide_index=True,
+        )
+        beta_line = np.linspace(0.0, max(float(sml_df["Beta"].max()), 1.0) * 1.2, 2)
+        sml_line_df = pd.DataFrame({"Beta": beta_line, "Requerido": capm_ke(rf, beta_line, mu_m - rf)})
+        line = alt.Chart(sml_line_df).mark_line(color="green").encode(
+            x=alt.X("Beta", title="Beta vs. benchmark"), y=alt.Y("Requerido", title="Retorno anual"),
+        )
+        points = alt.Chart(sml_df).mark_point(size=100, filled=True).encode(
+            x="Beta", y=alt.Y("mu historico", title="Retorno anual"),
+            tooltip=["Activo", "Beta", "mu historico", "Requerido CAPM"],
+        )
+        labels = alt.Chart(sml_df).mark_text(dy=-10, fontSize=10).encode(x="Beta", y="mu historico", text="Activo")
+        st.altair_chart(line + points + labels, use_container_width=True)
+        st.caption(
+            "Línea verde: SML (rendimiento requerido por CAPM según beta). "
+            "Puntos: retorno histórico real de cada activo. Por encima de la "
+            "línea = alfa histórico positivo (rindió más de lo que su beta "
+            "exigía); por debajo = negativo. R² = participación del riesgo "
+            "total explicada por el mercado (riesgo sistemático); 1-R² es "
+            "riesgo idiosincrático, diversificable."
+        )
+
+    st.markdown("**Desempeño de la cartera vs. benchmark: Treynor, Jensen, Information Ratio**")
+    if not portfolio_bundle or not portfolio_bundle.get("carteras"):
+        st.info("Calcula un portafolio en 'Portafolio v2' arriba para ver esta comparación.")
+        return
+
+    cartera_nombre = st.selectbox(
+        "Cartera", options=list(portfolio_bundle["carteras"].keys()), key="perf_cartera"
+    )
+    cartera = portfolio_bundle["carteras"][cartera_nombre]
+    port_tickers = portfolio_bundle["tickers"]
+    faltantes = [t for t in port_tickers if t not in result.ok]
+    if faltantes:
+        st.error(f"Faltan datos descargados para: {', '.join(faltantes)}.")
+        return
+
+    port_price_df = pd.DataFrame({t: result.ok[t].prices for t in port_tickers})
+    port_simple = port_price_df.pct_change(fill_method=None)
+    port_simple = port_simple.loc[port_simple.notna().all(axis=1)]
+    port_returns = pd.Series(
+        portfolio_simple_returns(port_simple.to_numpy(), cartera.weights), index=port_simple.index
+    )
+    common_idx = port_returns.index.intersection(bench_simple.index)
+    if len(common_idx) < 3:
+        st.warning("Observaciones comunes insuficientes entre la cartera y el benchmark.")
+        return
+
+    p = port_returns.loc[common_idx].to_numpy()
+    b = bench_simple.loc[common_idx].to_numpy()
+    try:
+        beta_p = beta_covariance(p, b)
+        ols_p = beta_ols(p, b)
+    except BetaCapmError as exc:
+        st.error(str(exc))
+        return
+
+    sharpe_p = (
+        (cartera.expected_return - rf) / cartera.volatility if cartera.volatility > 0 else float("nan")
+    )
+    jensen_p = jensens_alpha(cartera.expected_return, rf, beta_p, mu_m)
+    active_returns = p - b
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Sharpe (riesgo total)", f"{sharpe_p:.4f}" if not np.isnan(sharpe_p) else "—")
+    try:
+        treynor_p = treynor_ratio(cartera.expected_return, rf, beta_p)
+        col2.metric("Treynor (riesgo sistemático)", f"{treynor_p:.4f}")
+    except PerformanceError as exc:
+        col2.metric("Treynor", "—")
+        col2.caption(str(exc))
+    col3.metric("Alfa de Jensen", f"{jensen_p:+.2%}")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Beta de la cartera vs. benchmark", f"{beta_p:.4f}")
+    col2.metric("R² (riesgo sistemático)", f"{ols_p.r_squared:.4f}")
+    try:
+        ir_result = information_ratio(active_returns, m)
+        col3.metric("Information Ratio", f"{ir_result.information_ratio:.4f}")
+    except PerformanceError as exc:
+        col3.metric("Information Ratio", "—")
+        col3.caption(str(exc))
+
+    st.caption(
+        "Treynor y Jensen usan beta (riesgo sistemático) en vez de sigma "
+        "(riesgo total, como Sharpe) — penalizan solo el riesgo que no se "
+        "diversifica. Information Ratio compara la cartera contra el "
+        "benchmark periodo a periodo (retorno activo / tracking error), no "
+        "contra rf."
+    )
+
+
 def _render_valuation_v2(capm_bundle: dict | None = None) -> None:
     """Mandato v2 (M8, GUIA_V2 §9): FCFF -> WACC -> valor terminal ->
     valor del patrimonio, GENERALIZADO a cualquier caso — ningún valor
@@ -2165,6 +2358,11 @@ def _render_authenticated_view(conn) -> None:
 
     st.divider()
     capm_bundle = _render_beta_capm_v2(st.session_state.get("fetch_result"), portfolio_bundle)
+
+    st.divider()
+    _render_sml_desempeno_v2(
+        st.session_state.get("fetch_result"), st.session_state.get("date_config"), portfolio_bundle
+    )
 
     st.divider()
     _render_valuation_v2(capm_bundle)
