@@ -241,6 +241,45 @@ realmente ocurrió — no se le atribuyen retroactivamente a David Torres.
 Cualquier interacción de IA posterior a su incorporación debe
 registrarse, cuando aplique, con ambos integrantes.
 
+## Sesión 17 — Documentación al día, personalidad/plan de crecimiento, equipo
+
+| Campo | Detalle |
+|---|---|
+| Fecha y responsable | 2 nov 2026 · Mariana Tobón H. y David Torres |
+| Herramienta y modelo | Claude (Anthropic), vía Claude Code |
+| Propósito | Poner `AI_USAGE.md`, `TRACEABILITY.md` y `README.md` al día con todo el trabajo v2 e identidad hecho hasta ese punto (se habían quedado en el estado del núcleo v1); agregar borrador de "Personalidad y diferenciación" y "Plan de crecimiento" al README; agregar a David Torres al equipo como coautor sin división de módulos |
+| Prompt (resumen) | "falta algo más? o ya está listo?" (dos veces) → se identificaron los tres documentos desactualizados; "avancemos" para el borrador de personalidad/roadmap; "en equipo agrega a David Torres porfa, y no lo dejes en borrador, hazlo bien porfa" |
+| Archivo o función | `AI_USAGE.md`, `TRACEABILITY.md`, `README.md`, `CONTRIBUTIONS.md`, `src/config.py` |
+| Cambios humanos | La estudiante decidió que David Torres es coautor de la TOTALIDAD del proyecto, sin dividir por módulos — decisión suya, no inferida |
+| Validación | 323/323 pruebas sin alteraciones (cambios puramente documentales) |
+| Limitaciones | El borrador de personalidad/plan de crecimiento quedó marcado explícitamente como borrador para que la estudiante lo ajuste |
+
+## Sesión 18 — CML, SML, desempeño vs. benchmark, ficha FIC (primera versión), entregables del repo
+
+| Campo | Detalle |
+|---|---|
+| Fecha y responsable | 4 nov 2026 · Mariana Tobón H. y David Torres |
+| Herramienta y modelo | Claude (Anthropic), vía Claude Code |
+| Propósito | Cerrar los gaps del "núcleo financiero de referencia" de la Guía de Sustentación Final: Línea del Mercado de Capitales (CML), Línea del Mercado de Títulos (SML) para todos los activos, descomposición de riesgo sistemático/no sistemático (R²), Treynor/Jensen/Information Ratio, y una primera versión de la ficha técnica en formato FIC (aproximación basada en el Decreto 1242/2013, ya que no se pudo descargar el Anexo 6/Circular Básica Jurídica en este entorno). También: `docs/ficha_producto.md` y `docs/matriz_evolucion.md` para la sustentación; CI (`.github/workflows/tests.yml`); `CHANGELOG.md`; dependencias fijadas en `requirements.txt`; `.env.example` |
+| Prompt (resumen) | "hagamos esto primero" + lista pegada de los 5 gaps del núcleo financiero; luego "como hago esto CI (.github/workflows/), CHANGELOG.md"; luego la pregunta sobre el entregable "Repositorio o carpeta" (dependencias fijadas, .env.example) |
+| Archivo o función | `src/performance.py` (nuevo: `capital_market_line`, `treynor_ratio`, `jensens_alpha`, `information_ratio`, `systematic_risk_share`), `src/portfolio.py` (`portfolio_simple_returns`), `app.py` (`_render_sml_desempeno_v2` nueva, CML en `_render_portfolio_v2`, `_render_ficha_tecnica` reescrita), `docs/ficha_producto.md`, `docs/matriz_evolucion.md`, `.github/workflows/tests.yml`, `CHANGELOG.md`, `requirements.txt`, `.env.example` |
+| Cambios humanos | Ninguno aún |
+| Validación | 339/339 pruebas (16 nuevas en `src/performance.py` y `portfolio_simple_returns`, golden values derivados a mano o de constantes estadísticas tabuladas); verificación end-to-end manual contra el universo sintético de 20 activos; smoke tests headless tras cada commit; versiones de dependencias fijadas e instaladas limpias para confirmar que el set exacto pasa las 339 pruebas |
+| Limitaciones | La ficha técnica de esta sesión era una aproximación basada solo en el Decreto 1242/2013 (que delega el contenido exacto a un documento no accesible) — reemplazada en la Sesión 19 |
+
+## Sesión 19 — Ficha FIC contra el Anexo 1 real, conversión de moneda
+
+| Campo | Detalle |
+|---|---|
+| Fecha y responsable | 5 nov 2026 · Mariana Tobón H. y David Torres |
+| Herramienta y modelo | Claude (Anthropic), vía Claude Code |
+| Propósito | La estudiante encontró y subió el documento que la guía del profesor cita como "Anexo 6" pero que en realidad fue reemplazado en 2022 por un nuevo "Anexo 1: Ficha Técnica – FIC" (confirmado al leerlo íntegro) — la ficha técnica se reconstruyó siguiendo su numeración exacta de 13 secciones. También: conversión de moneda explícita (`P_base=P_original*FX`, GUIA_V2 §3.2), que reemplaza el bloqueo duro de portafolios con activos en distinta moneda; y corrección de `YFinanceProvider` para reportar la moneda real de cada ticker en vez de "USD" fijo |
+| Prompt (resumen) | "no aparece, ya lo busqué y no aparece, es como si estuviera caído" → investigación que confirmó el reemplazo Anexo 6→Anexo 1; subida del PDF real; "de una vez" para la conversión de moneda |
+| Archivo o función | `src/fx.py` (nuevo), `app.py` (`_build_ficha_dict`/`_render_fic_card` reescritas por completo, bloque de conversión FX en `_render_portfolio_v2`), `src/data.py::YFinanceProvider` (moneda real vía `fast_info.currency`), `docs/normativa/` (ambos PDF guardados para trazabilidad) |
+| Cambios humanos | La estudiante consiguió y subió los dos documentos regulatorios (Decreto 1242/2013 y Anexo 1) que hicieron posible esta sesión — sin eso, la ficha habría quedado como aproximación sin verificar |
+| Validación | 343/343 pruebas (4 nuevas en `test_v2_fx.py`); verificado a mano que una tasa de cambio constante preserva los retornos porcentuales exactamente (propiedad matemática, con script de control sobre datos sintéticos en dos monedas) y por lo tanto no cambia los pesos de Markowitz; Maximum Drawdown del portafolio reutiliza `src.analytics.max_drawdown` ya probado; smoke test headless OK |
+| Limitaciones | La conversión de moneda usa una tasa CONSTANTE (un número, no una serie histórica de FX) — no modela el riesgo cambiario en sí; `YFinanceProvider.fetch` sigue sin probarse contra la red real en este entorno (limitación ya conocida y documentada) |
+
 ## Obligaciones pendientes del equipo (sección 10.2 de la guía)
 
 Antes de la entrega, cada integrante debe, para **cualquier** módulo

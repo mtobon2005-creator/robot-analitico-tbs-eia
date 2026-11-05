@@ -7,10 +7,11 @@ con las rutas reales del repositorio.
 
 **Cómo leer "Pruebas propias":** `archivo::cantidad` es el número de
 casos de prueba (items de pytest, incluyendo variantes parametrizadas)
-en ese archivo. La cantidad total del proyecto es **323**, todos
-pasando (`pytest tests/ -q`) — 97 en los archivos `test_v2_*.py`
+en ese archivo. La cantidad total del proyecto es **343**, todos
+pasando (`pytest tests/ -q`) — 117 en los archivos `test_v2_*.py`
 (Markowitz, Black-Litterman, covarianza, rebalanceo, beta/CAPM,
-valoración, técnico, trazabilidad); el resto, entre el núcleo v1 y
+valoración, técnico, trazabilidad, desempeño/CML/SML, conversión de
+moneda); el resto, entre el núcleo v1 y
 ampliaciones puntuales a sus archivos de prueba (ej. carga de tickers
 en bloque en `test_rf03_tickers.py`).
 
@@ -56,7 +57,7 @@ en bloque en `test_rf03_tickers.py`).
 | RNF-01 | Usabilidad y accesibilidad (teclado, contraste, alt text, alternativa tabular) | Avatar con `role='img' aria-label=...`; **cada gráfico** (precio, rendimiento, drawdown, trayectoria de forecasting, mapa comparativo) tiene un expander con `st.dataframe` como alternativa tabular; jerarquía de encabezados corregida (`st.header` en vez de `st.subheader`, evita saltar de h1 a h3); navegación por teclado y foco visible heredados de los widgets nativos de Streamlit | ✅ **Auditado con Lighthouse (Chrome DevTools): 98/100 en Accessibility.** El único hallazgo (encabezados no secuenciales) ya se corrigió. |
 | RNF-02 | Arquitectura monolítica modular, configuración externa, dependencias fijadas, URL HTTPS | `requirements.txt` (versiones fijadas), `.streamlit/secrets.toml.example`, `.gitignore`, estructura `src/` modular por responsabilidad | ✅ (falta el despliegue real con URL HTTPS — pendiente de la cuenta de hosting del curso) |
 | RNF-03 | OIDC mantenido, allowlist, preconsentimiento, sesión lógica, transacción, outbox/worker, mínimo privilegio, retención y purga | `src/auth.py`, `src/consent.py`, `src/sessions.py`, `src/notifications_worker.py`, `src/lifecycle.py` | ⚠️ (ver limitaciones #1 y #4 del README) |
-| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `v2/data/` (fixtures del escalamiento, verificados por `v2/MANIFIESTO_SHA256.json`), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (323/323 pruebas, 0 dependencias de red) |
+| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `v2/data/` (fixtures del escalamiento, verificados por `v2/MANIFIESTO_SHA256.json`), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (343/343 pruebas, 0 dependencias de red) |
 | RNF-05 | IA, autoría y documentación: README, AI_USAGE, CONTRIBUTIONS, TRACEABILITY, licencias, referencias APA 7 | Este archivo, `AI_USAGE.md`, `CONTRIBUTIONS.md`, `README.md` (sección Referencias), `LICENSE` | ✅ |
 
 ## Escalamiento v2 (Markowitz, Black-Litterman, CAPM, valoración, ficha técnica)
@@ -81,6 +82,7 @@ sección, o el correo del profesor donde aplica.
 | Ficha técnica consolidada por portafolio (correo del profesor, versión final) | `src/portfolio.py::portfolio_var`, `app.py::_render_ficha_tecnica` | `test_v2_portfolio.py` (5, portfolio_var) | VaR normal paramétrico verificado contra z_0.95 tabulado | ✅ |
 | Trazabilidad y exportación JSON del análisis de portafolio (GUIA_V2 §11) | `src/traceability.py`, `app.py::_render_portfolio_v2` (botón de descarga) | `test_v2_traceability.py` (incluido) | Claves del registro verificadas contra `v2/plantillas/trazabilidad.json` | ✅ |
 | Identidad visual "Botiverso": nombre, logo, tagline, propuesta de valor (correo del profesor, versión final) | `assets/logo_botiverso.svg`, `src/config.py`, `app.py::_render_identity_header`, `README.md` | N/A (identidad, sin lógica de negocio) | Diseñado y redactado por la estudiante; verificado visualmente con captura headless (Playwright) | ✅ |
+| Conversión de moneda explícita (`P_base=P_original*FX`) para portafolios con activos en distinta moneda (GUIA_V2 §3.2; identificado como pendiente en "Mandato v2") | `src/fx.py::convert_price_series`, `app.py::_render_portfolio_v2` (reemplaza el bloqueo duro anterior), `src/data.py::YFinanceProvider` (moneda real por ticker vía `fast_info.currency`, antes fija en "USD") | `test_v2_fx.py` (4) | Verificado a mano que una tasa constante no cambia los retornos porcentuales ni los pesos de Markowitz (propiedad matemática, con script de control sobre datos sintéticos de dos monedas) | ✅ |
 
 **Pendiente de la versión final (no técnico, fuera del alcance de este
 archivo):** plan de crecimiento con dueños y fechas; personalidad/

@@ -159,11 +159,16 @@ class YFinanceProvider:
         if hasattr(close, "columns"):  # MultiIndex en versiones recientes
             close = close.iloc[:, 0]
 
+        try:
+            currency = yf.Ticker(ticker).fast_info.currency or "USD"
+        except Exception:  # noqa: BLE001 — sin internet/campo no disponible: cae a USD
+            currency = "USD"
+
         return RawPriceResponse(
             ticker=ticker,
             dates=list(close.index.date),
             prices=list(close.values),
-            currency="USD",  # TODO: confirmar con yf.Ticker(ticker).fast_info.currency
+            currency=currency,
             timezone="UTC",  # ver limitación en el docstring de la clase
             source="Yahoo Finance (yfinance)",
             price_adjusted=True,

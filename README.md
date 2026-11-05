@@ -63,15 +63,14 @@ Torres.)*
 | Versión | Alcance | Fecha objetivo |
 |---|---|---|
 | v1.0 (actual) | Núcleo RF-01 a RF-22 + mandato v2 completo (Markowitz, Black-Litterman, beta/CAPM, valoración, ficha técnica) — entrega de la versión final del curso | nov 2026 |
-| v1.1 | Despliegue público real en Streamlit Cloud con URL HTTPS estable (RNF-02 pendiente); validar `YFinanceProvider` contra la red real fuera del entorno de pruebas | dic 2026 |
-| v1.2 | Conversión FX explícita COP/USD para comparar activos en distinta moneda sin bloquearlos (identificado como pendiente en "Mandato v2") | ene–feb 2027 |
-| v2.0 | Black-Litterman con `w_ref` por capitalización de mercado real (en vez de equiponderado); ampliar el universo de tickers más allá de los presets curados | mar–abr 2027 |
+| v1.1 | Despliegue público real en Streamlit Cloud con URL HTTPS estable (RNF-02 pendiente); validar `YFinanceProvider` contra la red real fuera del entorno de pruebas (incluida la detección de moneda real por ticker, ya con fallback a USD) | dic 2026 |
+| v2.0 | Black-Litterman con `w_ref` por capitalización de mercado real (en vez de equiponderado); ampliar el universo de tickers más allá de los presets curados; serie histórica de FX para modelar riesgo cambiario (la conversión actual usa una tasa constante) | mar–abr 2027 |
 | v2.x | Backtesting histórico de las reglas de rebalanceo; más clases de activos (ETFs, renta fija) | según disponibilidad tras el curso |
 
 ## Estado actual (este commit)
 
 **Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker + mandato
-v2 completo** (323/323 pruebas pasando):
+v2 completo** (343/343 pruebas pasando):
 
 - RF-01 a RF-22: ver secciones anteriores — todo verificado contra los
   casos oficiales de la matriz de pruebas.
@@ -149,8 +148,14 @@ v1 documentado arriba; lo extiende.
 - **Universo, benchmark, moneda y horizonte:** universo mixto —
   laboratorio sintético (pruebas sin red) y Yahoo real (`yfinance`) en
   paralelo. Benchmark: S&P 500. Moneda: USD y COP con conversión FX
-  explícita (`P_COP=P_USD*FX`, ver GUIA_V2 §3.2) — **no implementada
-  aún en v1**, es alcance nuevo de v2. Horizonte: 12 meses, con
+  explícita (`P_COP=P_USD*FX`, ver GUIA_V2 §3.2 y `src/fx.py`) —
+  **implementada**: con una tasa constante, no cambia los pesos
+  óptimos de Markowitz (los retornos porcentuales son invariantes a
+  escalar toda la serie de precios por una constante); solo deja de
+  bloquear portafolios con monedas mixtas y expresa montos en una
+  moneda consistente. No modela el riesgo cambiario en sí (la
+  volatilidad de la tasa de cambio), que requeriría una serie
+  histórica de FX, no un solo número. Horizonte: 12 meses, con
   rebalanceo mensual + por umbral/evento.
 - **Objetivo y restricciones:** maximizar utilidad media-varianza
   `U=w'mu-(gamma/2)*w'Sigma*w` sujeto a VaR 95% mensual ≤ 5% del
@@ -180,7 +185,7 @@ v1 documentado arriba; lo extiende.
 - **Base v1, rama, commit y pruebas:** rama
   `claude/practical-brown-ya1svc`, implementación v2 completa (Markowitz,
   Black-Litterman, rebalanceo, correlación, beta/CAPM, valoración,
-  ficha técnica), 323/323 pruebas pasando.
+  ficha técnica), 343/343 pruebas pasando.
 - **Equipo:** 2 integrantes (Mariana Tobón H. y David Torres),
   confirmado con el docente — ver `CONTRIBUTIONS.md`.
 
@@ -199,7 +204,7 @@ v1 documentado arriba; lo extiende.
 - **`docs/normativa/`** — fuentes regulatorias citadas por la ficha
   técnica de portafolio (Decreto 1242/2013, Anexo 1 de la Circular
   Básica Jurídica).
-- **`.github/workflows/tests.yml`** — CI: corre las 339 pruebas
+- **`.github/workflows/tests.yml`** — CI: corre las 343 pruebas
   automatizadas en cada push/PR a `main`.
 
 ## Ejecutar localmente

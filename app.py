@@ -53,6 +53,7 @@ from src.performance import (
     systematic_risk_share,
     treynor_ratio,
 )
+from src.fx import FxError, convert_price_series
 from src.config import APP_IDENTITY, FRECUENCIAS, MAX_HORIZON_PERIODS, N_MIN_ACTIVOS
 from src.consent import PreconsentInvalid, issue_preconsent_flow
 from src.db import get_connection, init_schema
@@ -1130,15 +1131,53 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         return
 
     currencies = {result.ok[t].currency for t in selected}
+    base_currency = next(iter(currencies))
+    fx_rates: dict[str, float] = {}
     if len(currencies) > 1:
-        st.error(
+        st.warning(
             f"Los activos seleccionados tienen monedas distintas ({', '.join(sorted(currencies))}). "
-            "El mandato v2 exige conversión FX explícita (README, Mandato v2 — "
-            "aún no implementada); selecciona activos en una sola moneda."
+            "Convierte todo a una moneda base con una tasa de cambio "
+            "(GUIA_V2 §3.2, P_base=P_original*FX) antes de optimizar."
         )
-        return
+        base_currency = st.selectbox(
+            "Moneda base del portafolio", options=sorted(currencies), key="portfolio_fx_base"
+        )
+        otras_monedas = sorted(c for c in currencies if c != base_currency)
+        fx_error = False
+        for moneda in otras_monedas:
+            rate = st.number_input(
+                f"Tasa de cambio: 1 {moneda} = ? {base_currency}", min_value=0.0,
+                value=4000.0 if {moneda, base_currency} == {"USD", "COP"} else 1.0,
+                step=0.01, format="%.4f", key=f"portfolio_fx_rate_{moneda}",
+            )
+            if rate <= 0:
+                st.error(f"La tasa para {moneda} debe ser positiva.")
+                fx_error = True
+            fx_rates[moneda] = rate
+        if fx_error:
+            return
+        st.caption(
+            "Con una tasa constante (un solo número, no una serie histórica "
+            "de FX), la conversión NO cambia los pesos óptimos de Markowitz "
+            "— los retornos porcentuales son invariantes a multiplicar toda "
+            "la serie de precios por una constante. Sí permite analizar los "
+            "activos juntos y expresar montos (VaR, rebalanceo, ficha "
+            "técnica) en una sola moneda. No modela el riesgo cambiario "
+            "(la volatilidad de la tasa de cambio en sí)."
+        )
 
-    price_df = pd.DataFrame({t: result.ok[t].prices for t in selected})
+    price_series_by_ticker = {}
+    for t in selected:
+        prices_t = result.ok[t].prices
+        moneda_t = result.ok[t].currency
+        if moneda_t != base_currency:
+            try:
+                prices_t = convert_price_series(prices_t, fx_rates[moneda_t])
+            except FxError as exc:
+                st.error(f"{t}: {exc}")
+                return
+        price_series_by_ticker[t] = prices_t
+    price_df = pd.DataFrame(price_series_by_ticker)
     simple_returns = price_df.pct_change(fill_method=None)
     common_mask = simple_returns.notna().all(axis=1)
     simple_returns = simple_returns.loc[common_mask]
@@ -1487,7 +1526,7 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
     with col3:
         permitir_fracciones = st.checkbox("Permitir fracciones", value=True, key="rebalance_fractions")
 
-    precios_actuales = np.array([float(result.ok[t].prices.iloc[-1]) for t in selected])
+    precios_actuales = np.array([float(price_df[t].iloc[-1]) for t in selected])
 
     if st.button("Calcular rebalanceo"):
         try:
@@ -1534,6 +1573,9 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         "gamma": gamma,
         "bounds": "[0,1] por activo (largo, sin apalancamiento)",
     }
+    if fx_rates:
+        trace_params["fx_base_currency"] = base_currency
+        trace_params["fx_rates"] = fx_rates
     if usar_shrinkage:
         trace_params["shrinkage_delta"] = shrink_delta
     if usar_bl:
@@ -1543,7 +1585,7 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
 
     trace = build_trace_record(
         source=result.ok[selected[0]].source,
-        currency=next(iter(currencies)),
+        currency=base_currency,
         frequency=frequency,
         return_convention="retornos simples (agregación de cartera, GUIA_V2 §4.1)",
         annualization="lineal (mu x m, Sigma x m)",
@@ -1590,7 +1632,7 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         "gamma": gamma,
         "frequency": frequency,
         "n_obs": n_obs,
-        "currency": next(iter(currencies)),
+        "currency": base_currency,
         "source": result.ok[selected[0]].source,
         "corr_matrix": corr_matrix,
         "fecha_inicio": str(simple_returns.index.min().date()),

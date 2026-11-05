@@ -110,8 +110,9 @@ Base para la diapositiva 2 ("Producto y oferta de valor") y la diapositiva 1
 - **Aplicación objetivo:** construcción y seguimiento de portafolios de
   inversión para un analista o estudiante individual.
 - **Mejora prioritaria:** despliegue público estable en Streamlit Cloud
-  con URL HTTPS verificada, y conversión FX explícita COP/USD (hoy los
-  activos en distinta moneda se bloquean en vez de convertirse).
+  con URL HTTPS verificada, y una serie histórica de FX para modelar
+  riesgo cambiario (la conversión de moneda ya implementada usa una
+  tasa constante, no una serie de tiempo).
 - **Evidencia para decidir continuar:** retroalimentación de la
   sustentación final y si el equipo sigue usando o mostrando la
   herramienta después de cerrado el curso.
