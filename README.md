@@ -196,6 +196,9 @@ v1 documentado arriba; lo extiende.
 - **`CHANGELOG.md`** — historial de versiones con fecha real por commit.
 - **`docs/ficha_producto.md`** y **`docs/matriz_evolucion.md`** —
   material para la Guía de Sustentación Final.
+- **`docs/normativa/`** — fuentes regulatorias citadas por la ficha
+  técnica de portafolio (Decreto 1242/2013, Anexo 1 de la Circular
+  Básica Jurídica).
 - **`.github/workflows/tests.yml`** — CI: corre las 339 pruebas
   automatizadas en cada push/PR a `main`.
 

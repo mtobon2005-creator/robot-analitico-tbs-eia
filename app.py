@@ -68,6 +68,7 @@ from src.analytics import (
     compute_drawdown_series,
     compute_log_returns,
     descriptive_stats,
+    max_drawdown,
     quantile_type7,
 )
 from src.comparison import (
@@ -1592,6 +1593,8 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         "currency": next(iter(currencies)),
         "source": result.ok[selected[0]].source,
         "corr_matrix": corr_matrix,
+        "fecha_inicio": str(simple_returns.index.min().date()),
+        "fecha_fin": str(simple_returns.index.max().date()),
     }
 
 
@@ -2200,6 +2203,16 @@ def _render_valuation_v2(capm_bundle: dict | None = None) -> None:
     )
 
 
+_ANEXO1_TEXTO_OBLIGATORIO = (
+    "La ficha técnica puede servir al inversionista para conocer los "
+    "objetivos, riesgos, costos y otras condiciones relevantes para "
+    "evaluar una potencial inversión en el FIC. Este documento no debe "
+    "ser la única fuente de información para la toma de decisiones de "
+    "inversión. La información incluida refleja el comportamiento "
+    "histórico del FIC, pero no implica que su comportamiento en el "
+    "futuro sea igual o semejante."
+)
+
 _FIC_ADVERTENCIA = (
     'Adaptado del Artículo 3.1.1.9.3 del Decreto 1242 de 2013: "Las '
     "obligaciones [...] relacionadas con la gestión del portafolio son "
@@ -2214,7 +2227,18 @@ _FIC_ADVERTENCIA = (
 )
 
 
-def _build_ficha_dict(nombre, cartera, objetivo, portfolio_bundle, capm_bundle, var_conf, var_capital) -> dict:
+def _build_ficha_dict(
+    etiqueta: str, cartera, objetivo: str, portfolio_bundle: dict, capm_bundle: dict | None,
+    result: FetchResult, var_conf: float, var_capital: float,
+) -> dict:
+    """Ficha siguiendo la numeración del Anexo 1 "Ficha Técnica — Fondos
+    de Inversión Colectiva" (Parte III, Título VI, Capítulo III de la
+    Circular Básica Jurídica, Superintendencia Financiera de Colombia,
+    2022) — el documento que reemplaza al antiguo Anexo 6 citado en la
+    Guía de Sustentación Final. Se completa lo que un portafolio
+    SIMULADO con fines académicos puede calcular; el resto queda N/A
+    con el motivo, siguiendo la propia instrucción del Anexo ("si el
+    FIC no cuenta con... se debe incluir N/A")."""
     tickers = portfolio_bundle["tickers"]
     rf_anual = portfolio_bundle["rf_anual"]
     sharpe = (
@@ -2226,66 +2250,174 @@ def _build_ficha_dict(nombre, cartera, objetivo, portfolio_bundle, capm_bundle, 
     avg_corr = float((corr_matrix.sum() - n) / (n * (n - 1))) if corr_matrix is not None and n > 1 else None
     beta_L_obj = capm_bundle.get("beta_L_obj") if capm_bundle else None
     ke_show = (capm_bundle.get("ke_converted") or capm_bundle.get("ke_foreign")) if capm_bundle else None
+
+    price_df = pd.DataFrame({t: result.ok[t].prices for t in tickers})
+    simple = price_df.pct_change(fill_method=None)
+    simple = simple.loc[simple.notna().all(axis=1)]
+    port_returns = pd.Series(
+        portfolio_simple_returns(simple.to_numpy(), cartera.weights), index=simple.index
+    )
+    unit_value = var_capital * (1.0 + port_returns).cumprod()
+    mdd = max_drawdown(unit_value)
+    concentracion = sorted(zip(tickers, cartera.weights), key=lambda x: -x[1])[:10]
+
     return {
-        "nombre_portafolio": f"Botiverso — Cartera {nombre} (simulación académica)",
-        "objetivo_inversion": objetivo,
-        "restricciones": (
-            "Solo posiciones largas (0% <= peso <= 100% por activo); sin "
-            "apalancamiento; suma de pesos = 100%."
+        "1_encabezado": {
+            "1.1_identificacion": "Ficha Técnica – Fondos de Inversión Colectiva",
+            "1.1_texto_obligatorio": _ANEXO1_TEXTO_OBLIGATORIO,
+            "1.2_nombre_fic": f"Botiverso — Cartera {etiqueta} (simulación académica, NO es un FIC real)",
+            "1.3_naturaleza": "N/A — simulación académica, no es un FIC regulado; sin pacto de permanencia",
+            "1.4_clasificacion_industria": "N/A",
+            "1.5_fecha_corte": date.today().isoformat(),
+            "1.6_sociedad_administradora": "N/A — no hay sociedad administradora real",
+            "1.7_gestor": "N/A",
+        },
+        "2_informacion_general": {
+            "2.1_fecha_inicio_operaciones": portfolio_bundle["fecha_inicio"],
+            "2.2_fecha_vencimiento": "N/A — sin vencimiento definido",
+            "2.3_tipos_participaciones": "N/A — una sola clase",
+            "2.4_valor_activos": float(var_capital),
+            "2.5_valor_pasivos": 0.0,
+            "2.6_valor_neto": float(var_capital),
+            "2.7_valor_unidad": "N/A — no se modela por unidades",
+            "2.8_numero_inversionistas": "N/A",
+            "2.9_inscripcion_rnve": "N/A",
+            "2.10_mercado_secundario": "N/A",
+            "2.11_sancion_retiro_anticipado": "N/A — sin pacto de permanencia",
+        },
+        "3_calificacion": "N/A — no hay calificadora de riesgo autorizada evaluando esta simulación",
+        "4_politica_inversion": {
+            "4.1_objeto_estrategia": objetivo,
+            "4.2_perfil_riesgo": f"Volatilidad anual {cartera.volatility:.2%}",
+            "4.3_indice_referencia": "N/A en esta ficha — ver sección 'Línea del Mercado de Títulos (SML) y desempeño vs. benchmark'",
+            "4.4_horizonte_recomendado": "1 año (horizonte de las métricas anualizadas)",
+        },
+        "5_riesgos": {
+            "5.1_perfil_liquidez": "100% en rango '1 día o menos' — activos: acciones listadas en bolsa (simplificación: esta app no modela activos ilíquidos)",
+            "5.1.2_apalancamiento_bruto": 0.0,
+            "5.1.2_apalancamiento_neto": 0.0,
+            "5.1.3_maximum_drawdown": float(mdd),
+            "5.1.3_var": var_result,
+        },
+        "6_gastos_comisiones": "N/A — no hay sociedad administradora real cobrando comisión",
+        "7_evolucion_historica": {
+            "inversion_hipotetica": float(var_capital),
+            "valor_final": float(unit_value.iloc[-1]),
+            "serie": {str(k.date()): float(v) for k, v in unit_value.items()},
+        },
+        "8_rentabilidades_y_desempeno": {
+            "rentabilidad_esperada_anual": float(cartera.expected_return),
+            "sharpe": None if sharpe is None or np.isnan(sharpe) else float(sharpe),
+            "nota": "Treynor, alfa de Jensen e Information Ratio vs. benchmark están en la sección 'Línea del Mercado de Títulos (SML) y desempeño vs. benchmark'.",
+        },
+        "9_volatilidad_historica": {"anual": float(cartera.volatility)},
+        "10_inversiones_del_fic": {
+            "10.1_composicion_por_clase": "100% renta variable (acciones)",
+            "10.5_sectores_economicos": "N/A — clasificación sectorial no disponible en los datos de origen (Yahoo Finance, en este pipeline)",
+        },
+        "11_principales_inversiones": {
+            "11.1_concentracion_top10": {t: float(w) for t, w in concentracion},
+            "11.2_a_11.5_renta_fija": "N/A — portafolio de renta variable, no aplican plazos ni duración de Macaulay",
+        },
+        "12_informacion_adicional": "Repositorio y documentación: https://github.com/mtobon2005-creator/robot-analitico-tbs-eia",
+        "13_observaciones": (
+            "Ficha adaptada de la estructura del Anexo 1 \"Ficha Técnica — "
+            "Fondos de Inversión Colectiva\" (Circular Básica Jurídica, "
+            "Superintendencia Financiera de Colombia, 2022) para un "
+            "portafolio SIMULADO con fines académicos — no es la ficha "
+            "técnica de un FIC real. " + _FIC_ADVERTENCIA
         ),
-        "fecha_corte": date.today().isoformat(),
-        "sociedad_administradora": "N/A — portafolio simulado académico, no es un FIC real ni administrado",
-        "fuente": portfolio_bundle["source"],
-        "moneda": portfolio_bundle["currency"],
-        "frecuencia": portfolio_bundle["frequency"],
-        "n_obs": portfolio_bundle["n_obs"],
         "composicion": {t: float(w) for t, w in zip(tickers, cartera.weights)},
-        "rentabilidad_esperada_anual": float(cartera.expected_return),
-        "volatilidad_anual": float(cartera.volatility),
-        "sharpe": None if sharpe is None or np.isnan(sharpe) else float(sharpe),
-        "indicador_riesgo_var": var_result,
         "correlacion_promedio": avg_corr,
         "beta_reapalancada": beta_L_obj,
         "ke": ke_show,
-        "comisiones": "N/A — no hay sociedad administradora real cobrando comisión",
-        "advertencia_regulatoria": _FIC_ADVERTENCIA,
     }
 
 
-def _render_fic_card(nombre: str, objetivo: str, ficha: dict) -> None:
-    st.markdown(f"#### {ficha['nombre_portafolio']}")
-    st.caption(f"**Objetivo:** {objetivo}")
-    st.caption(f"**Restricciones:** {ficha['restricciones']}")
+def _render_fic_card(etiqueta: str, ficha: dict) -> None:
+    s1, s2, s4, s5, s7, s8, s9, s10, s11 = (
+        ficha["1_encabezado"], ficha["2_informacion_general"], ficha["4_politica_inversion"],
+        ficha["5_riesgos"], ficha["7_evolucion_historica"], ficha["8_rentabilidades_y_desempeno"],
+        ficha["9_volatilidad_historica"], ficha["10_inversiones_del_fic"], ficha["11_principales_inversiones"],
+    )
+
+    st.markdown(f"#### 1. Encabezado — {s1['1.2_nombre_fic']}")
+    st.caption(s1["1.1_texto_obligatorio"])
     st.caption(
-        f"Corte: {ficha['fecha_corte']} · Fuente: {ficha['fuente']} · "
-        f"Moneda: {ficha['moneda']} · Frecuencia: {ficha['frecuencia']} "
-        f"({ficha['n_obs']} obs.) · Sociedad administradora: "
-        f"{ficha['sociedad_administradora']}"
+        f"1.3 Naturaleza: {s1['1.3_naturaleza']} · 1.5 Fecha de corte: "
+        f"{s1['1.5_fecha_corte']} · 1.6 Sociedad administradora: {s1['1.6_sociedad_administradora']}"
     )
 
-    comp_df = pd.DataFrame(
-        [{"Activo": t, "Peso": f"{w:.2%}"} for t, w in ficha["composicion"].items()]
+    st.markdown("**2. Información general del FIC**")
+    st.caption(
+        f"2.1 Inicio de operaciones (datos usados): {s2['2.1_fecha_inicio_operaciones']} · "
+        f"2.4 Valor de activos: {s2['2.4_valor_activos']:,.0f} · 2.5 Pasivos: "
+        f"{s2['2.5_valor_pasivos']:,.0f} · 2.6 Valor neto: {s2['2.6_valor_neto']:,.0f}"
     )
-    st.dataframe(comp_df, use_container_width=True, hide_index=True)
+    st.caption("3. Calificación: " + ficha["3_calificacion"])
 
+    st.markdown("**4. Política de inversión del FIC**")
+    st.caption(f"4.1 Objeto y estrategia: {s4['4.1_objeto_estrategia']}")
+    st.caption(f"4.2 Perfil de riesgo: {s4['4.2_perfil_riesgo']} · 4.4 Horizonte: {s4['4.4_horizonte_recomendado']}")
+
+    st.markdown("**5. Riesgos**")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Rentabilidad esperada anual", f"{ficha['rentabilidad_esperada_anual']:.2%}")
-    col2.metric("Volatilidad anual", f"{ficha['volatilidad_anual']:.2%}")
-    col3.metric("Sharpe", f"{ficha['sharpe']:.3f}" if ficha["sharpe"] is not None else "—")
+    col1.metric("5.1.2 Apalancamiento neto", f"{s5['5.1.2_apalancamiento_neto']:.0%}")
+    col2.metric("5.1.3 Maximum Drawdown", f"{s5['5.1.3_maximum_drawdown']:.2%}")
+    var_result = s5["5.1.3_var"]
+    col3.metric(f"5.1.3 VaR {int(var_result['confidence']*100)}%", f"{var_result['fraction']:.2%}")
+    st.caption(f"5.1 Perfil de liquidez: {s5['5.1_perfil_liquidez']}")
 
-    var_result = ficha["indicador_riesgo_var"]
-    col1, col2, col3 = st.columns(3)
-    col1.metric(
-        f"Indicador de riesgo — VaR {int(var_result['confidence']*100)}%",
-        f"{var_result['fraction']:.2%}",
+    st.markdown("**7. Evolución histórica** (inversión hipotética)")
+    serie_df = pd.DataFrame(
+        {"fecha": list(s7["serie"].keys()), "valor": list(s7["serie"].values())}
     )
-    col2.metric("Beta reapalancada", f"{ficha['beta_reapalancada']:.4f}" if ficha["beta_reapalancada"] is not None else "—")
-    col3.metric("Ke", f"{ficha['ke']:.2%}" if ficha["ke"] is not None else "—")
-    st.caption(f"**Comisiones:** {ficha['comisiones']}")
-    st.caption(f"⚠️ {ficha['advertencia_regulatoria']}")
+    serie_df["fecha"] = pd.to_datetime(serie_df["fecha"])
+    chart = alt.Chart(serie_df).mark_line().encode(
+        x=alt.X("fecha:T", title="Fecha"), y=alt.Y("valor:Q", title=f"Valor de {s7['inversion_hipotetica']:,.0f}"),
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(f"Valor final: {s7['valor_final']:,.2f} (inicial: {s7['inversion_hipotetica']:,.2f})")
+
+    st.markdown("**8-9. Rentabilidades y volatilidad histórica**")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Rentabilidad esperada anual", f"{s8['rentabilidad_esperada_anual']:.2%}")
+    col2.metric("Volatilidad anual (9)", f"{s9['anual']:.2%}")
+    col3.metric("Sharpe", f"{s8['sharpe']:.3f}" if s8["sharpe"] is not None else "—")
+    st.caption(s8["nota"])
+
+    st.markdown("**10-11. Inversiones del FIC y principales posiciones**")
+    st.caption(f"10.1 Composición por clase de activo: {s10['10.1_composicion_por_clase']}")
+    top10_df = pd.DataFrame(
+        [{"Activo": t, "Peso": f"{w:.2%}"} for t, w in s11["11.1_concentracion_top10"].items()]
+    )
+    st.dataframe(top10_df, use_container_width=True, hide_index=True)
+
+    beta_L_obj, ke_show, avg_corr = ficha["beta_reapalancada"], ficha["ke"], ficha["correlacion_promedio"]
+    if beta_L_obj is not None or ke_show is not None or avg_corr is not None:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Correlación promedio", f"{avg_corr:.3f}" if avg_corr is not None else "—")
+        col2.metric("Beta reapalancada", f"{beta_L_obj:.4f}" if beta_L_obj is not None else "—")
+        col3.metric("Ke", f"{ke_show:.2%}" if ke_show is not None else "—")
+
+    with st.expander("Ver secciones N/A (3, 6, 10.5, 11.2-11.5) y el resto del encabezado/información general"):
+        st.json(
+            {
+                "1_encabezado": s1,
+                "2_informacion_general": s2,
+                "3_calificacion": ficha["3_calificacion"],
+                "6_gastos_comisiones": ficha["6_gastos_comisiones"],
+                "10_inversiones_del_fic": s10,
+                "11_principales_inversiones_renta_fija": s11["11.2_a_11.5_renta_fija"],
+                "12_informacion_adicional": ficha["12_informacion_adicional"],
+            }
+        )
+    st.caption(f"⚠️ {ficha['13_observaciones']}")
 
 
-def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | None) -> None:
+def _render_ficha_tecnica(
+    portfolio_bundle: dict | None, capm_bundle: dict | None, result: FetchResult | None
+) -> None:
     """Fichas técnicas de portafolio (Guía de Sustentación Final,
     sección 4: "Ficha técnica del portafolio óptimo (tangente), de
     mínimo riesgo y de mayor rendimiento [...] según la normatividad
@@ -2293,25 +2425,27 @@ def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | Non
     de 2013, Circular Básica Jurídica y Anexo 6").
 
     El Decreto 1242/2013 (Art. 3.1.1.9.8) exige la ficha técnica pero
-    delega su contenido exacto a la Circular Básica Jurídica / Anexo 6
-    de la Superfinanciera — texto que no se pudo descargar en este
-    entorno (red restringida). Esta ficha es una aproximación de buena
-    fe a la estructura típica de una ficha técnica de FIC colombiana,
-    con los campos que esta app puede calcular; la única parte
-    verbatim de la norma es la advertencia regulatoria del Art.
-    3.1.1.9.3 (ver `_FIC_ADVERTENCIA`). No sustituye verificar el Anexo
-    6 vigente si se requiere conformidad regulatoria estricta."""
+    delega su contenido exacto a la Circular Básica Jurídica — el
+    "Anexo 6" que cita la guía del profesor fue reemplazado desde 2022
+    por un nuevo "Anexo 1: Ficha Técnica – Fondos de Inversión
+    Colectiva" (la estudiante consiguió y subió ese documento). Esta
+    ficha sigue su numeración exacta (secciones 1 a 13); lo que un
+    portafolio SIMULADO con fines académicos no puede tener (sociedad
+    administradora real, calificadora de riesgo, RNVE, comisiones,
+    renta fija) queda N/A con el motivo, tal como el propio Anexo 1
+    instruye hacer cuando un campo no aplica."""
     st.header("Ficha técnica del portafolio")
     st.caption(
-        "Aproximación al formato de ficha técnica de FIC (Decreto 1242 "
-        "de 2013, Art. 3.1.1.9.8) — el decreto exige la ficha pero "
-        "delega el contenido exacto a la Circular Básica Jurídica / "
-        "Anexo 6 de la Superfinanciera, no verificado en este entorno. "
-        "La advertencia regulatoria de abajo sí es texto del decreto "
-        "(Art. 3.1.1.9.3), adaptado."
+        "Estructura del Anexo 1 \"Ficha Técnica – Fondos de Inversión "
+        "Colectiva\" (Circular Básica Jurídica, Superintendencia "
+        "Financiera de Colombia, 2022 — reemplaza al antiguo Anexo 6). "
+        "Portafolio SIMULADO con fines académicos: los campos que "
+        "requieren una sociedad administradora, calificadora de riesgo "
+        "o activos de renta fija reales quedan N/A, siguiendo la propia "
+        "instrucción del Anexo."
     )
 
-    if not portfolio_bundle or not portfolio_bundle.get("carteras"):
+    if not portfolio_bundle or not portfolio_bundle.get("carteras") or not result:
         st.info(
             "Calcula un portafolio en la sección 'Portafolio v2: Markowitz, "
             "Black-Litterman y rebalanceo' arriba para ver sus fichas técnicas."
@@ -2324,8 +2458,8 @@ def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | Non
         var_conf = st.selectbox("Confianza del VaR (todas las fichas)", options=[0.95, 0.99], key="ficha_var_conf")
     with col2:
         var_capital = st.number_input(
-            "Capital hipotético (todas las fichas)", min_value=1.0, value=10000.0,
-            step=1000.0, key="ficha_var_capital",
+            "Inversión hipotética — 2.4/7 (todas las fichas)", min_value=1.0, value=1000000.0,
+            step=100000.0, key="ficha_var_capital",
         )
 
     obligatorias = [
@@ -2339,9 +2473,9 @@ def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | Non
         if clave not in carteras:
             st.caption(f"Cartera '{clave}' no disponible en este run.")
             continue
-        ficha = _build_ficha_dict(etiqueta, carteras[clave], objetivo, portfolio_bundle, capm_bundle, var_conf, var_capital)
+        ficha = _build_ficha_dict(etiqueta, carteras[clave], objetivo, portfolio_bundle, capm_bundle, result, var_conf, var_capital)
         with st.expander(f"Ficha técnica — {etiqueta}", expanded=(etiqueta == "tangente")):
-            _render_fic_card(etiqueta, objetivo, ficha)
+            _render_fic_card(etiqueta, ficha)
         fichas_export[etiqueta] = ficha
 
     otras = [k for k in carteras if k not in {c[0] for c in obligatorias}]
@@ -2351,9 +2485,9 @@ def _render_ficha_tecnica(portfolio_bundle: dict | None, capm_bundle: dict | Non
             objetivo_otra = "Definida por el usuario (ver sección Portafolio v2)."
             ficha_otra = _build_ficha_dict(
                 cartera_nombre, carteras[cartera_nombre], objetivo_otra, portfolio_bundle,
-                capm_bundle, var_conf, var_capital,
+                capm_bundle, result, var_conf, var_capital,
             )
-            _render_fic_card(cartera_nombre, objetivo_otra, ficha_otra)
+            _render_fic_card(cartera_nombre, ficha_otra)
             fichas_export[cartera_nombre] = ficha_otra
 
     st.download_button(
@@ -2417,7 +2551,7 @@ def _render_authenticated_view(conn) -> None:
     _render_valuation_v2(capm_bundle)
 
     st.divider()
-    _render_ficha_tecnica(portfolio_bundle, capm_bundle)
+    _render_ficha_tecnica(portfolio_bundle, capm_bundle, st.session_state.get("fetch_result"))
 
 
 def main() -> None:
