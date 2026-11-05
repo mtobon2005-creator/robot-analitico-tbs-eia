@@ -2442,40 +2442,23 @@ def _render_fic_card(etiqueta: str, ficha: dict) -> None:
         col2.metric("Beta reapalancada", f"{beta_L_obj:.4f}" if beta_L_obj is not None else "—")
         col3.metric("Ke", f"{ke_show:.2%}" if ke_show is not None else "—")
 
-    with st.expander("Ver el resto de la ficha (secciones que no aplican a un portafolio simulado, y por qué)"):
+    with st.expander("¿Por qué hay secciones en N/A? (resto del Anexo 1)"):
         st.markdown(
-            f"""
-**1. Encabezado (resto)**
-- 1.3 Naturaleza: {s1['1.3_naturaleza']}
-- 1.4 Clasificación por industria: {s1['1.4_clasificacion_industria']}
-- 1.6 Sociedad administradora: {s1['1.6_sociedad_administradora']}
-- 1.7 Gestor: {s1['1.7_gestor']}
-
-**2. Información general (resto)**
-- 2.2 Fecha de vencimiento: {s2['2.2_fecha_vencimiento']}
-- 2.3 Tipos de participaciones: {s2['2.3_tipos_participaciones']}
-- 2.7 Valor de la unidad: {s2['2.7_valor_unidad']}
-- 2.8 Número de inversionistas: {s2['2.8_numero_inversionistas']}
-- 2.9 Inscripción en el RNVE: {s2['2.9_inscripcion_rnve']}
-- 2.10 Negociación en mercado secundario: {s2['2.10_mercado_secundario']}
-- 2.11 Sanción por retiro anticipado: {s2['2.11_sancion_retiro_anticipado']}
-
-**3. Calificación**
-- {ficha['3_calificacion']}
-
-**6. Gastos y comisiones**
-- {ficha['6_gastos_comisiones']}
-
-**10. Inversiones del FIC (resto)**
-- 10.5 Sectores económicos: {s10['10.5_sectores_economicos']}
-
-**11. Principales inversiones (resto)**
-- 11.2 a 11.5 (plazos y duración de renta fija): {s11['11.2_a_11.5_renta_fija']}
-
-**12. Información adicional**
-- {ficha['12_informacion_adicional']}
-"""
+            "El Anexo 1 tiene 13 secciones; esta ficha completa las que un "
+            "portafolio **simulado** puede tener y marca N/A el resto, con "
+            "el motivo — no se inventa:\n\n"
+            "- **No aplica por no ser un FIC real administrado** (secciones "
+            "1.3, 1.4, 1.6, 1.7, 2.2, 2.3, 2.7 a 2.11, 3, 6): naturaleza, "
+            "clasificación de industria, sociedad administradora, gestor, "
+            "vencimiento, tipos de participación, valor de la unidad, "
+            "número de inversionistas, inscripción en el RNVE, mercado "
+            "secundario, sanciones, calificación de riesgo y comisiones.\n"
+            "- **No aplica por ser un portafolio solo de acciones** "
+            "(secciones 10.5, 11.2 a 11.5): sectores económicos (sin esa "
+            "clasificación en los datos de Yahoo Finance de este pipeline) "
+            "y plazos/duración de Macaulay (son de renta fija)."
         )
+        st.caption(f"Repositorio y documentación completa: {ficha['12_informacion_adicional'].split(': ')[-1]}")
     st.caption(f"⚠️ {ficha['13_observaciones']}")
 
 
