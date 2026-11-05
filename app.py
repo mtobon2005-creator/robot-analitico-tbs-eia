@@ -141,6 +141,13 @@ _EXTENDED_TICKERS_PRESET = _FIXTURE_TICKERS_PRESET + [
     "ABBV", "LLY", "TMO", "ABT", "CVX", "BA", "GE", "HON", "UPS", "VZ",
 ]
 
+# Para probar la conversión de moneda (src/fx.py): dos activos en USD
+# + ISA.CL, acción de Interconexión Eléctrica S.A. E.S.P. en la Bolsa
+# de Valores de Colombia, confirmada en COP por la estudiante en
+# finance.yahoo.com (requiere Yahoo Finance real, no está en el
+# fixture sintético).
+_FX_DEMO_TICKERS_PRESET = ["AAPL", "MSFT", "ISA.CL"]
+
 _LOGO_PATH = Path(__file__).parent / "assets" / "logo_botiverso.svg"
 _LOGO_SVG = _LOGO_PATH.read_text(encoding="utf-8") if _LOGO_PATH.exists() else None
 
@@ -387,7 +394,7 @@ def _render_ticker_collection() -> list[str]:
             for raw, reason in bulk_errors:
                 st.write(f"- **{raw}**: {reason}")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("Cargar universo de prueba (20 activos del fixture sintético)"):
             new_collection, _ = add_tickers_bulk(collection, " ".join(_FIXTURE_TICKERS_PRESET))
@@ -398,10 +405,16 @@ def _render_ticker_collection() -> list[str]:
             new_collection, _ = add_tickers_bulk(collection, " ".join(_EXTENDED_TICKERS_PRESET))
             st.session_state["ticker_collection"] = new_collection
             st.rerun()
+    with col3:
+        if st.button("Probar conversión de moneda (AAPL, MSFT + ISA.CL en COP)"):
+            new_collection, _ = add_tickers_bulk(collection, " ".join(_FX_DEMO_TICKERS_PRESET))
+            st.session_state["ticker_collection"] = new_collection
+            st.rerun()
     st.caption(
         "El universo ampliado solo tiene precios en el fixture sintético "
-        "para los primeros 20 — los 30 adicionales necesitan 'Yahoo "
-        "Finance (datos reales)' como fuente abajo."
+        "para los primeros 20 — los 30 adicionales, y el preset de "
+        "conversión de moneda, necesitan 'Yahoo Finance (datos reales)' "
+        "como fuente abajo."
     )
 
     if collection:
