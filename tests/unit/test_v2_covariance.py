@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from src.covariance import correlation_from_covariance, shrink_to_diagonal
+from src.covariance import check_positive_semidefinite, correlation_from_covariance, shrink_to_diagonal
 
 V2_DATA = Path(__file__).resolve().parents[2] / "v2" / "data"
 
@@ -116,3 +116,46 @@ def test_correlation_rejects_non_square_sigma():
 def test_correlation_rejects_non_positive_variance():
     with pytest.raises(ValueError, match="varianza"):
         correlation_from_covariance([[0.0, 0.0], [0.0, 0.04]])
+
+
+# --- check_positive_semidefinite --------------------------------------------
+
+def test_psd_check_true_for_valid_covariance():
+    # [[2,1],[1,2]] -> autovalores 1 y 3 (control: (2-l)^2-1=0 -> l=1,3)
+    result = check_positive_semidefinite([[2.0, 1.0], [1.0, 2.0]])
+    assert result.is_psd is True
+    assert result.min_eigenvalue == pytest.approx(1.0, abs=1e-10)
+
+
+def test_psd_check_false_for_invalid_matrix():
+    # [[1,2],[2,1]] -> autovalores -1 y 3 (no es PSD)
+    result = check_positive_semidefinite([[1.0, 2.0], [2.0, 1.0]])
+    assert result.is_psd is False
+    assert result.min_eigenvalue == pytest.approx(-1.0, abs=1e-10)
+
+
+def test_psd_check_tolerates_tiny_negative_numerical_noise():
+    result = check_positive_semidefinite([[1.0, 0.0], [0.0, 1e-10]], atol=1e-8)
+    assert result.is_psd is True
+
+
+def test_psd_check_true_for_synthetic_universe_sample_covariance():
+    import pandas as pd
+
+    prices = pd.read_csv(
+        V2_DATA / "precios_sinteticos_20.csv", parse_dates=["fecha"]
+    ).set_index("fecha").sort_index()
+    returns = prices.pct_change(fill_method=None).dropna(how="any")
+    Sigma_sample = returns.cov(ddof=1).to_numpy()
+    result = check_positive_semidefinite(Sigma_sample)
+    assert result.is_psd is True
+
+
+def test_psd_check_rejects_asymmetric_sigma():
+    with pytest.raises(ValueError, match="simétrica"):
+        check_positive_semidefinite([[0.01, 0.004], [0.005, 0.04]])
+
+
+def test_psd_check_rejects_non_square_sigma():
+    with pytest.raises(ValueError, match="NxN"):
+        check_positive_semidefinite(np.zeros((2, 3)))

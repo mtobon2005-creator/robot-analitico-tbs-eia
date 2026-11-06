@@ -63,6 +63,49 @@ def compute_var(dist: HorizonDistribution, confidence: float, capital: float) ->
     )
 
 
+@dataclass(frozen=True)
+class ExpectedShortfallResult:
+    confidence: float
+    horizon: int
+    capital: float
+    fraction: float  # ES_frac — nunca negativo (piso en 0)
+    monetary: float  # ES_$ = capital · fraction
+
+
+def compute_expected_shortfall(dist: HorizonDistribution, confidence: float, capital: float) -> ExpectedShortfallResult:
+    """Pérdida esperada MÁS ALLÁ del VaR (Guía de Sustentación Final,
+    "Riesgo y probabilidades": "VaR, pérdida esperada..."). Responde
+    justo a la limitación que el VaR ya declara en la app: "no informa
+    la magnitud media de la pérdida más allá del cuantil".
+
+    ES = E[pérdida | pérdida > VaR] = 1 - E[exp(g_h) | g_h <= q_{1-c}],
+    con g_h ~ N(m_h, v_h) (misma distribución log-normal del horizonte
+    que usa compute_var). Para una normal truncada, con
+    b=(q_{1-c}-m_h)/sd_h = -z_c (derivado completando el cuadrado en
+    la integral de la lognormal truncada):
+
+        E[exp(g_h) | g_h<=q_{1-c}] = exp(m_h + v_h/2) · Φ(b-sd_h)/Φ(b)
+                                    = exp(m_h + v_h/2) · Φ(-z_c-sd_h)/(1-c)
+
+    ES_frac = max(0, 1 - exp(m_h + v_h/2) · Φ(-z_c-sd_h) / (1-c))
+    """
+    if not (0 < confidence < 1):
+        raise ValueError("El nivel de confianza debe estar en (0, 1).")
+
+    z_c = stats.norm.ppf(confidence)
+    v_h = dist.sd_h ** 2
+    tail_expectation = np.exp(dist.m_h + v_h / 2) * stats.norm.cdf(-z_c - dist.sd_h) / (1 - confidence)
+    fraction = max(0.0, 1.0 - tail_expectation)
+
+    return ExpectedShortfallResult(
+        confidence=confidence,
+        horizon=dist.h,
+        capital=capital,
+        fraction=fraction,
+        monetary=fraction * capital,
+    )
+
+
 # --- RF-17: niveles de entrada, stop-loss, take-profit -----------------------
 
 def validate_tail_probabilities(p_l: float, p_u: float) -> None:

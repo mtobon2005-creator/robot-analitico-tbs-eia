@@ -20,6 +20,31 @@ import numpy as np
 
 
 @dataclass(frozen=True)
+class PsdCheckResult:
+    is_psd: bool
+    min_eigenvalue: float
+
+
+def check_positive_semidefinite(Sigma, atol: float = 1e-8) -> PsdCheckResult:
+    """Sigma es semidefinida positiva si todos sus autovalores son
+    >= 0 — condición necesaria para que sea una matriz de covarianza
+    válida (Guía de Sustentación Final, "Portafolios y frontera
+    eficiente": "matriz de covarianzas y correlaciones válida
+    (semidefinida positiva)"). `atol` tolera ruido numérico (un
+    autovalor ligeramente negativo por redondeo binario no es lo
+    mismo que una matriz genuinamente inválida)."""
+    Sigma = np.asarray(Sigma, dtype=float)
+    n = Sigma.shape[0]
+    if Sigma.shape != (n, n):
+        raise ValueError("Sigma debe ser NxN")
+    if not np.allclose(Sigma, Sigma.T, atol=1e-10):
+        raise ValueError("Sigma no es simétrica")
+    eigenvalues = np.linalg.eigvalsh(Sigma)
+    min_eig = float(eigenvalues.min())
+    return PsdCheckResult(is_psd=bool(min_eig >= -atol), min_eigenvalue=min_eig)
+
+
+@dataclass(frozen=True)
 class ShrinkageResult:
     Sigma: np.ndarray
     delta: float
