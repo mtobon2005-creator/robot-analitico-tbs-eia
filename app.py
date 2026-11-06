@@ -1178,10 +1178,7 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
                 step=0.01, format="%.4f", key=f"portfolio_fx_rate_{moneda}",
             )
             if live_rate is not None:
-                st.caption(
-                    f"Tasa en vivo de Yahoo Finance ({yahoo_par}): "
-                    f"{live_rate:,.4f} — editable si prefieres otra fuente."
-                )
+                st.caption(f"Tasa en vivo de Yahoo Finance ({yahoo_par}): {live_rate:,.4f}")
             else:
                 st.caption(
                     "No se pudo obtener la tasa en vivo desde aquí — "
