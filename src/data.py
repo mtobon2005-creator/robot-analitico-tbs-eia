@@ -175,6 +175,33 @@ class YFinanceProvider:
         )
 
 
+def fetch_live_fx_rate(from_currency: str, to_currency: str) -> float | None:
+    """Tasa de cambio en vivo vía Yahoo Finance, par FROMTO=X (ej.
+    'USDCOP=X' = cuántos COP equivalen a 1 USD — misma dirección que
+    `src.fx.convert_price_series` espera). Requiere internet; ante
+    cualquier falla (sin red, par no soportado por Yahoo, etc.)
+    devuelve None en vez de lanzar, para que quien llama pueda caer a
+    un valor manual — no se usa en las pruebas automatizadas (sin
+    internet, PROVIDER-01). NO probada contra la red real en este
+    entorno de desarrollo (misma limitación conocida que
+    `YFinanceProvider`)."""
+    if from_currency == to_currency:
+        return 1.0
+    import yfinance as yf
+
+    ticker = f"{from_currency}{to_currency}=X"
+    try:
+        data = yf.download(ticker, period="5d", progress=False, auto_adjust=True)
+        if data is None or data.empty:
+            return None
+        close = data["Close"]
+        if hasattr(close, "columns"):
+            close = close.iloc[:, 0]
+        return float(close.iloc[-1])
+    except Exception:  # noqa: BLE001 — cualquier fallo cae a None, no a excepción
+        return None
+
+
 # --- RF-06: limpieza --------------------------------------------------------
 
 def clean_prices(raw: RawPriceResponse) -> tuple[pd.Series, dict]:

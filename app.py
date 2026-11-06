@@ -82,7 +82,7 @@ from src.comparison import (
     select_min_volatility_under_mean_floor,
     select_non_dominated_set,
 )
-from src.data import FetchResult, FixtureProvider, fetch_and_clean_many
+from src.data import FetchResult, FixtureProvider, fetch_and_clean_many, fetch_live_fx_rate
 from src.export import (
     export_asset_analysis_csv,
     export_asset_analysis_json,
@@ -561,6 +561,14 @@ def _get_yfinance_provider():
     from src.data import YFinanceProvider
 
     return YFinanceProvider()
+
+
+@st.cache_data(ttl=3600)
+def _cached_live_fx_rate(from_currency: str, to_currency: str) -> float | None:
+    """Envuelve fetch_live_fx_rate con caché de 1 hora — sin esto,
+    Streamlit volvería a pedirle la tasa a Yahoo en cada rerun (cada
+    interacción con cualquier widget de la página, no solo los de FX)."""
+    return fetch_live_fx_rate(from_currency, to_currency)
 
 
 def _render_data_fetch(collection: list[str]) -> None:
@@ -1161,11 +1169,25 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         otras_monedas = sorted(c for c in currencies if c != base_currency)
         fx_error = False
         for moneda in otras_monedas:
+            yahoo_par = f"{moneda}{base_currency}=X"
+            live_rate = _cached_live_fx_rate(moneda, base_currency)
+            fallback_default = 4000.0 if {moneda, base_currency} == {"USD", "COP"} else 1.0
             rate = st.number_input(
                 f"Tasa de cambio: 1 {moneda} = ? {base_currency}", min_value=0.0,
-                value=4000.0 if {moneda, base_currency} == {"USD", "COP"} else 1.0,
+                value=live_rate if live_rate is not None else fallback_default,
                 step=0.01, format="%.4f", key=f"portfolio_fx_rate_{moneda}",
             )
+            if live_rate is not None:
+                st.caption(
+                    f"Tasa en vivo de Yahoo Finance ({yahoo_par}): "
+                    f"{live_rate:,.4f} — editable si prefieres otra fuente."
+                )
+            else:
+                st.caption(
+                    "No se pudo obtener la tasa en vivo desde aquí — "
+                    f"verifica en [Yahoo Finance](https://finance.yahoo.com/quote/{yahoo_par}) "
+                    "o tu fuente de confianza y ajusta el número."
+                )
             if rate <= 0:
                 st.error(f"La tasa para {moneda} debe ser positiva.")
                 fx_error = True

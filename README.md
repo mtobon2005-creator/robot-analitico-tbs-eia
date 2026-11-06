@@ -149,13 +149,17 @@ v1 documentado arriba; lo extiende.
   laboratorio sintético (pruebas sin red) y Yahoo real (`yfinance`) en
   paralelo. Benchmark: S&P 500. Moneda: USD y COP con conversión FX
   explícita (`P_COP=P_USD*FX`, ver GUIA_V2 §3.2 y `src/fx.py`) —
-  **implementada**: con una tasa constante, no cambia los pesos
-  óptimos de Markowitz (los retornos porcentuales son invariantes a
-  escalar toda la serie de precios por una constante); solo deja de
-  bloquear portafolios con monedas mixtas y expresa montos en una
-  moneda consistente. No modela el riesgo cambiario en sí (la
-  volatilidad de la tasa de cambio), que requeriría una serie
-  histórica de FX, no un solo número. Horizonte: 12 meses, con
+  **implementada**: la tasa se sugiere en vivo desde Yahoo Finance
+  (`src/data.py::fetch_live_fx_rate`, par `USDCOP=X`, con enlace a la
+  cotización si no se pudo obtener) pero siempre es editable, y es un
+  solo número vigente al momento de la consulta, no una serie
+  histórica de FX; por eso no cambia los pesos óptimos de Markowitz
+  (los retornos porcentuales son invariantes a escalar toda la serie
+  de precios por una constante) — solo deja de bloquear portafolios
+  con monedas mixtas y expresa montos en una moneda consistente. No
+  modela el riesgo cambiario en sí (la volatilidad de la tasa de
+  cambio en el tiempo), que requeriría esa serie histórica de FX.
+  Horizonte: 12 meses, con
   rebalanceo mensual + por umbral/evento.
 - **Objetivo y restricciones:** maximizar utilidad media-varianza
   `U=w'mu-(gamma/2)*w'Sigma*w` sujeto a VaR 95% mensual ≤ 5% del
