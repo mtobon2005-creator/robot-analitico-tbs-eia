@@ -70,7 +70,7 @@ Torres.)*
 ## Estado actual (este commit)
 
 **Núcleo obligatorio completo (RF-01 a RF-22) + lifecycle_worker + mandato
-v2 completo** (343/343 pruebas pasando):
+v2 completo** (365/365 pruebas pasando):
 
 - RF-01 a RF-22: ver secciones anteriores — todo verificado contra los
   casos oficiales de la matriz de pruebas.
@@ -189,7 +189,7 @@ v1 documentado arriba; lo extiende.
 - **Base v1, rama, commit y pruebas:** rama
   `claude/practical-brown-ya1svc`, implementación v2 completa (Markowitz,
   Black-Litterman, rebalanceo, correlación, beta/CAPM, valoración,
-  ficha técnica), 343/343 pruebas pasando.
+  ficha técnica), 365/365 pruebas pasando.
 - **Equipo:** 2 integrantes (Mariana Tobón H. y David Torres),
   confirmado con el docente — ver `CONTRIBUTIONS.md`.
 
@@ -208,7 +208,7 @@ v1 documentado arriba; lo extiende.
 - **`docs/normativa/`** — fuentes regulatorias citadas por la ficha
   técnica de portafolio (Decreto 1242/2013, Anexo 1 de la Circular
   Básica Jurídica).
-- **`.github/workflows/tests.yml`** — CI: corre las 343 pruebas
+- **`.github/workflows/tests.yml`** — CI: corre las 365 pruebas
   automatizadas en cada push/PR a `main`.
 
 ## Ejecutar localmente

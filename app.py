@@ -14,7 +14,7 @@ from pathlib import Path
 
 from src import auth, sessions, audit
 from src.black_litterman import BlackLittermanError, black_litterman
-from src.covariance import correlation_from_covariance, shrink_to_diagonal
+from src.covariance import check_positive_semidefinite, correlation_from_covariance, shrink_to_diagonal
 from src.portfolio import (
     PortfolioOptimizationError,
     efficient_frontier,
@@ -105,9 +105,11 @@ from src.risk import (
     DEFAULT_P_U,
     InvalidCostRate,
     InvalidTailProbabilities,
+    compute_expected_shortfall,
     compute_var,
     evaluate_signal,
 )
+from src.diagnostics import DiagnosticsError, arch_lm_test, jarque_bera_test, ljung_box_test
 from src.horizon import (
     InvalidDateRange,
     InvalidFrequency,
@@ -762,6 +764,38 @@ def _render_historical_analysis() -> None:
             f"{comparison.recent_window.sd_annual:.4%}"
         )
 
+    st.markdown("**Diagnósticos de los supuestos (normalidad, autocorrelación, homocedasticidad)**")
+    st.caption(
+        "Pruebas de hipótesis sobre los log-rendimientos de este activo — "
+        "distinguen lo que la muestra sostiene de lo que no; un rechazo no "
+        "invalida el modelo, es información para interpretar sus resultados "
+        "con cautela."
+    )
+    diag_cols = st.columns(3)
+    try:
+        jb = jarque_bera_test(returns.to_numpy())
+        with diag_cols[0]:
+            st.metric("Jarque-Bera (normalidad)", f"p = {jb.p_value:.4f}")
+            st.caption(jb.interpretation)
+    except DiagnosticsError as exc:
+        diag_cols[0].caption(f"Jarque-Bera: {exc}")
+
+    try:
+        lb = ljung_box_test(returns.to_numpy(), lags=min(10, len(returns) - 1))
+        with diag_cols[1]:
+            st.metric(f"Ljung-Box (autocorr., lag {lb.lags})", f"p = {lb.p_value:.4f}")
+            st.caption(lb.interpretation)
+    except DiagnosticsError as exc:
+        diag_cols[1].caption(f"Ljung-Box: {exc}")
+
+    try:
+        arch = arch_lm_test(returns.to_numpy(), lags=min(5, len(returns) - 1))
+        with diag_cols[2]:
+            st.metric(f"ARCH-LM (homoced., lag {arch.lags})", f"p = {arch.p_value:.4f}")
+            st.caption(arch.interpretation)
+    except DiagnosticsError as exc:
+        diag_cols[2].caption(f"ARCH-LM: {exc}")
+
 
 def _render_forecasting() -> None:
     """RF-13 a RF-15: forecasting homocedástico multihorizonte y
@@ -805,6 +839,7 @@ def _render_forecasting() -> None:
     )
 
     p_t = float(prices.iloc[-1])
+    wf_results: dict = {}
     for modelo in modelos:
         trajectory = generate_trajectory(p_t, params, modelo, horizon_config.periods)
         nombre = "A (caminata aleatoria)" if modelo == "A" else "B (lognormal con deriva)"
@@ -843,6 +878,7 @@ def _render_forecasting() -> None:
                 st.warning(f"**No señal** — {exc}")
                 continue
 
+            wf_results[modelo] = wf
             st.write(
                 f"- Orígenes evaluados: {wf.origins}\n"
                 f"- MAE (logespacio): {wf.mae:.6f}\n"
@@ -855,6 +891,37 @@ def _render_forecasting() -> None:
                     else "- Exactitud direccional: N/A (m_h = 0 en todos los orígenes)"
                 )
             )
+
+    if "A" in wf_results and "B" in wf_results:
+        st.markdown("**Contraste: Modelo B vs. Modelo A como referencia simple**")
+        wf_a, wf_b = wf_results["A"], wf_results["B"]
+        mae_delta = (wf_b.mae - wf_a.mae) / wf_a.mae if wf_a.mae > 0 else None
+        rmse_delta = (wf_b.rmse - wf_a.rmse) / wf_a.rmse if wf_a.rmse > 0 else None
+        comp_rows = [
+            {
+                "Métrica": "MAE (logespacio)", "Modelo A (referencia)": f"{wf_a.mae:.6f}",
+                "Modelo B": f"{wf_b.mae:.6f}",
+                "B vs. A": f"{mae_delta:+.1%}" if mae_delta is not None else "N/A",
+            },
+            {
+                "Métrica": "RMSE (logespacio)", "Modelo A (referencia)": f"{wf_a.rmse:.6f}",
+                "Modelo B": f"{wf_b.rmse:.6f}",
+                "B vs. A": f"{rmse_delta:+.1%}" if rmse_delta is not None else "N/A",
+            },
+            {
+                "Métrica": "Cobertura intervalo 90%", "Modelo A (referencia)": f"{wf_a.coverage:.1%}",
+                "Modelo B": f"{wf_b.coverage:.1%}", "B vs. A": "—",
+            },
+        ]
+        st.dataframe(comp_rows, use_container_width=True, hide_index=True)
+        st.caption(
+            "El Modelo A (caminata aleatoria sin deriva) es la referencia "
+            "simple: si el Modelo B (lognormal con deriva, más complejo) no "
+            "mejora su MAE/RMSE contra A en esta validación walk-forward, "
+            "la deriva estimada no está aportando poder predictivo real en "
+            "esta muestra — negativo en 'B vs. A' significa que B mejora "
+            "(menor error)."
+        )
 
 
 def _render_risk_and_levels() -> None:
@@ -914,13 +981,19 @@ def _render_risk_and_levels() -> None:
         dist = horizon_params(modelo, params, horizon_config.periods)
 
         var_result = compute_var(dist, confidence, capital)
+        es_result = compute_expected_shortfall(dist, confidence, capital)
         col1, col2 = st.columns(2)
         col1.metric(f"VaR {int(confidence*100)}% (fracción)", f"{var_result.fraction:.4%}")
         col2.metric(f"VaR {int(confidence*100)}% (monetario)", f"{var_result.monetary:,.2f}")
+        col1, col2 = st.columns(2)
+        col1.metric(f"Pérdida esperada {int(confidence*100)}% (fracción)", f"{es_result.fraction:.4%}")
+        col2.metric(f"Pérdida esperada {int(confidence*100)}% (monetario)", f"{es_result.monetary:,.2f}")
         st.caption(
             "El VaR no es la pérdida máxima posible ni informa la magnitud "
-            "media de la pérdida más allá del cuantil; puede subestimar el "
-            "riesgo si hay colas gruesas (puntos 36-38 de la guía)."
+            "media de la pérdida más allá del cuantil (puntos 36-38 de la "
+            "guía) — la pérdida esperada (Expected Shortfall) sí: es el "
+            "promedio de la pérdida EN la cola más allá del VaR, por eso "
+            "siempre es mayor o igual."
         )
 
         try:
@@ -1252,6 +1325,21 @@ def _render_portfolio_v2(result: FetchResult | None, date_config: dict | None) -
         st.dataframe(
             pd.DataFrame({"Activo": selected, "μ anual": mu_annual}).assign(**sigma_cols),
             use_container_width=True, hide_index=True,
+        )
+
+    psd_check = check_positive_semidefinite(Sigma_annual)
+    if psd_check.is_psd:
+        st.caption(
+            f"✅ Σ es semidefinida positiva (autovalor mínimo = "
+            f"{psd_check.min_eigenvalue:.2e}) — matriz de covarianza válida "
+            "para optimizar."
+        )
+    else:
+        st.warning(
+            f"⚠️ Σ NO es semidefinida positiva (autovalor mínimo = "
+            f"{psd_check.min_eigenvalue:.2e}) — probablemente más activos "
+            "que observaciones independientes; la optimización puede no ser "
+            "confiable. Considera shrinkage (abajo) o más observaciones."
         )
 
     st.markdown("**Matriz de correlación**")

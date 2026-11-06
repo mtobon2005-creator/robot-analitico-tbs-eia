@@ -7,11 +7,12 @@ con las rutas reales del repositorio.
 
 **Cómo leer "Pruebas propias":** `archivo::cantidad` es el número de
 casos de prueba (items de pytest, incluyendo variantes parametrizadas)
-en ese archivo. La cantidad total del proyecto es **343**, todos
-pasando (`pytest tests/ -q`) — 117 en los archivos `test_v2_*.py`
-(Markowitz, Black-Litterman, covarianza, rebalanceo, beta/CAPM,
+en ese archivo. La cantidad total del proyecto es **365**, todos
+pasando (`pytest tests/ -q`) — 139 en los archivos `test_v2_*.py`
+(Markowitz, Black-Litterman, covarianza/PSD, rebalanceo, beta/CAPM,
 valoración, técnico, trazabilidad, desempeño/CML/SML, conversión de
-moneda); el resto, entre el núcleo v1 y
+moneda, pérdida esperada, diagnósticos de normalidad/autocorrelación/
+homocedasticidad); el resto, entre el núcleo v1 y
 ampliaciones puntuales a sus archivos de prueba (ej. carga de tickers
 en bloque en `test_rf03_tickers.py`).
 
@@ -57,7 +58,7 @@ en bloque en `test_rf03_tickers.py`).
 | RNF-01 | Usabilidad y accesibilidad (teclado, contraste, alt text, alternativa tabular) | Avatar con `role='img' aria-label=...`; **cada gráfico** (precio, rendimiento, drawdown, trayectoria de forecasting, mapa comparativo) tiene un expander con `st.dataframe` como alternativa tabular; jerarquía de encabezados corregida (`st.header` en vez de `st.subheader`, evita saltar de h1 a h3); navegación por teclado y foco visible heredados de los widgets nativos de Streamlit | ✅ **Auditado con Lighthouse (Chrome DevTools): 98/100 en Accessibility.** El único hallazgo (encabezados no secuenciales) ya se corrigió. |
 | RNF-02 | Arquitectura monolítica modular, configuración externa, dependencias fijadas, URL HTTPS | `requirements.txt` (versiones fijadas), `.streamlit/secrets.toml.example`, `.gitignore`, estructura `src/` modular por responsabilidad | ✅ (falta el despliegue real con URL HTTPS — pendiente de la cuenta de hosting del curso) |
 | RNF-03 | OIDC mantenido, allowlist, preconsentimiento, sesión lógica, transacción, outbox/worker, mínimo privilegio, retención y purga | `src/auth.py`, `src/consent.py`, `src/sessions.py`, `src/notifications_worker.py`, `src/lifecycle.py` | ⚠️ (ver limitaciones #1 y #4 del README) |
-| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `v2/data/` (fixtures del escalamiento, verificados por `v2/MANIFIESTO_SHA256.json`), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (343/343 pruebas, 0 dependencias de red) |
+| RNF-04 | Pruebas y reproducibilidad: fixtures sin internet, mocks, tolerancias, cobertura, commit reproducible | `tests/fixtures/` (fixtures oficiales verificados por SHA256SUMS.txt), `v2/data/` (fixtures del escalamiento, verificados por `v2/MANIFIESTO_SHA256.json`), `MockProvider`, tolerancias `pytest.approx(abs=1e-8)` en todo el proyecto | ✅ (365/365 pruebas, 0 dependencias de red) |
 | RNF-05 | IA, autoría y documentación: README, AI_USAGE, CONTRIBUTIONS, TRACEABILITY, licencias, referencias APA 7 | Este archivo, `AI_USAGE.md`, `CONTRIBUTIONS.md`, `README.md` (sección Referencias), `LICENSE` | ✅ |
 
 ## Escalamiento v2 (Markowitz, Black-Litterman, CAPM, valoración, ficha técnica)
@@ -83,6 +84,10 @@ sección, o el correo del profesor donde aplica.
 | Trazabilidad y exportación JSON del análisis de portafolio (GUIA_V2 §11) | `src/traceability.py`, `app.py::_render_portfolio_v2` (botón de descarga) | `test_v2_traceability.py` (incluido) | Claves del registro verificadas contra `v2/plantillas/trazabilidad.json` | ✅ |
 | Identidad visual "Botiverso": nombre, logo, tagline, propuesta de valor (correo del profesor, versión final) | `assets/logo_botiverso.svg`, `src/config.py`, `app.py::_render_identity_header`, `README.md` | N/A (identidad, sin lógica de negocio) | Diseñado y redactado por la estudiante; verificado visualmente con captura headless (Playwright) | ✅ |
 | Conversión de moneda explícita (`P_base=P_original*FX`) para portafolios con activos en distinta moneda (GUIA_V2 §3.2; identificado como pendiente en "Mandato v2") | `src/fx.py::convert_price_series`, `app.py::_render_portfolio_v2` (reemplaza el bloqueo duro anterior), `src/data.py::YFinanceProvider` (moneda real por ticker vía `fast_info.currency`, antes fija en "USD"), `src/data.py::fetch_live_fx_rate` (tasa sugerida en vivo desde Yahoo Finance, par `FROMTO=X`, con enlace de respaldo a la cotización si falla) | `test_v2_fx.py` (4) | Verificado a mano que una tasa constante no cambia los retornos porcentuales ni los pesos de Markowitz (propiedad matemática, con script de control sobre datos sintéticos de dos monedas); `fetch_live_fx_rate` no probada contra la red real en este entorno (misma limitación conocida que `YFinanceProvider`) | ✅ |
+| Matriz de covarianzas semidefinida positiva, verificada en vivo (Guía de Sustentación Final, "Portafolios y frontera eficiente") | `src/covariance.py::check_positive_semidefinite`, `app.py::_render_portfolio_v2` | `test_v2_covariance.py` (6) | Autovalor mínimo vía `np.linalg.eigvalsh`; control manual con matrices 2x2 de autovalores conocidos ([[2,1],[1,2]]→1,3; [[1,2],[2,1]]→-1,3) | ✅ |
+| Pérdida esperada (Expected Shortfall) junto al VaR (Guía de Sustentación Final, "Riesgo y probabilidades") | `src/risk.py::compute_expected_shortfall` | `test_v2_expected_shortfall.py` (7) | Fórmula cerrada de la cola de una lognormal truncada derivada a mano (ver docstring); verificada contra los mismos casos oficiales VAR99-A-01/VAR99-B-01 de RF-16 (ES siempre ≥ VaR) | ✅ |
+| Diagnósticos de normalidad (Jarque-Bera), autocorrelación (Ljung-Box) y homocedasticidad (ARCH-LM) por activo, con interpretación en palabras (Guía de Sustentación Final, "Historia y supuestos") | `src/diagnostics.py` (nuevo), `app.py::_render_historical_analysis` | `test_v2_diagnostics.py` (9) | Ljung-Box/ARCH-LM vía `statsmodels` (no reimplementados a mano); verificados contra 4 casos sintéticos de comportamiento conocido: ruido blanco no rechaza nada, AR(1) fuerte rechaza Ljung-Box, t-student de colas pesadas rechaza Jarque-Bera, proceso ARCH(1) real rechaza ARCH-LM | ✅ |
+| Contraste del walk-forward del Modelo B contra el Modelo A como referencia simple (Guía de Sustentación Final, "Pronóstico y validación") | `app.py::_render_forecasting` (ambos modelos ya se validaban por separado; se agregó la tabla comparativa) | Lógica de comparación verificada con resultados simulados (delta negativo = B mejora) | — | ✅ |
 
 **Pendiente de la versión final (no técnico, fuera del alcance de este
 archivo):** plan de crecimiento con dueños y fechas; personalidad/
