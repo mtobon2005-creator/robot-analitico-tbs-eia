@@ -142,11 +142,14 @@ _EXTENDED_TICKERS_PRESET = _FIXTURE_TICKERS_PRESET + [
 ]
 
 # Para probar la conversión de moneda (src/fx.py): dos activos en USD
-# + ISA.CL, acción de Interconexión Eléctrica S.A. E.S.P. en la Bolsa
-# de Valores de Colombia, confirmada en COP por la estudiante en
-# finance.yahoo.com (requiere Yahoo Finance real, no está en el
-# fixture sintético).
-_FX_DEMO_TICKERS_PRESET = ["AAPL", "MSFT", "ISA.CL"]
+# + cuatro activos de la Bolsa de Valores de Colombia, todos
+# confirmados en COP por la estudiante en finance.yahoo.com (requiere
+# Yahoo Finance real, no están en el fixture sintético): ISA
+# (Interconexión Eléctrica S.A. E.S.P.), Ecopetrol S.A., y Grupo
+# Cibest S.A. (ordinaria y preferencial).
+_FX_DEMO_TICKERS_PRESET = [
+    "AAPL", "MSFT", "ISA.CL", "ECOPETROL.CL", "CIBEST.CL", "PFCIBEST.CL",
+]
 
 _LOGO_PATH = Path(__file__).parent / "assets" / "logo_botiverso.svg"
 _LOGO_SVG = _LOGO_PATH.read_text(encoding="utf-8") if _LOGO_PATH.exists() else None
@@ -406,7 +409,7 @@ def _render_ticker_collection() -> list[str]:
             st.session_state["ticker_collection"] = new_collection
             st.rerun()
     with col3:
-        if st.button("Probar conversión de moneda (AAPL, MSFT + ISA.CL en COP)"):
+        if st.button("Probar conversión de moneda (AAPL, MSFT (USD) + 4 activos BVC en COP)"):
             new_collection, _ = add_tickers_bulk(collection, " ".join(_FX_DEMO_TICKERS_PRESET))
             st.session_state["ticker_collection"] = new_collection
             st.rerun()
