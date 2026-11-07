@@ -94,7 +94,7 @@ Base para la diapositiva 2 ("Producto y oferta de valor") y la diapositiva 1
 
 ## Resultados
 
-- **Técnica:** 339/339 pruebas automatizadas pasando; cada fórmula
+- **Técnica:** 365/365 pruebas automatizadas pasando; cada fórmula
   financiera verificada contra un caso de control oficial del curso o
   derivado a mano (ver `TRACEABILITY.md`).
 - **De uso:** demostración en vivo posible con datos reales de mercado,
