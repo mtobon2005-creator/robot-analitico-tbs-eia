@@ -50,16 +50,17 @@ Mariana Tobón H. como David Torres deben poder:
 | Mariana Tobón H. | `125ebb8`/`fc9e64d`/`ef22c2b` | Repositorio inicial (núcleo RF-01 a RF-22) generado con asistencia de IA. |
 | Mariana Tobón H. | `8fc636c` | Fix `ImportError` (import muerto en `app.py`) que rompía el despliegue en Streamlit Cloud. |
 | Mariana Tobón H. | `0a59212` | Fix regresión v1: `APP_IDENTITY.members` (bug de tupla) y test de sesión única desactualizado. |
-| Mariana Tobón H. | `5c592d9`…`382af31` | Escalamiento v2 completo: Markowitz, Black-Litterman, rebalanceo, covarianza/correlación, beta/CAPM, valoración, ficha técnica. |
-| Mariana Tobón H. | `5924ab7`/`aa539f8` | Identidad visual "Botiverso": logo, nombre, tagline, propuesta de valor. |
+| Mariana Tobón H., David Torres | `5c592d9`…`382af31` | Escalamiento v2 completo (segunda entrega): Markowitz, Black-Litterman, rebalanceo, covarianza/correlación, beta/CAPM, valoración, ficha técnica. |
+| Mariana Tobón H., David Torres | `5924ab7`/`aa539f8` | Identidad visual "Botiverso": logo, nombre, tagline, propuesta de valor. |
 
-Todos los commits hasta este punto fueron dirigidos por Mariana Tobón
-H. — David Torres se incorpora al equipo a partir de este archivo. Lo
-anterior es un registro histórico honesto, no una atribución retroactiva:
-no se le adjudican a David Torres commits anteriores a su
-incorporación. De aquí en adelante, ambos integrantes son coautores de
-cualquier cambio nuevo, se refleje o no el nombre de ambos en el
-mensaje del commit.
+Los commits de la primera entrega (núcleo v1, `125ebb8` a `0a59212`)
+fueron dirigidos únicamente por Mariana Tobón H. David Torres se
+incorpora al equipo al inicio de la segunda entrega (el escalamiento
+v2 que arranca en `5c592d9`). Lo anterior es un registro histórico
+honesto, no una atribución retroactiva: no se le adjudican a David
+Torres commits anteriores a su incorporación. Desde el escalamiento
+v2 en adelante, ambos integrantes son coautores de cualquier cambio
+nuevo, se refleje o no el nombre de ambos en el mensaje del commit.
 
 ---
 

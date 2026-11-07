@@ -151,11 +151,24 @@ equipo (sección 10, párrafo introductorio).
 | Validación | Revisión cruzada manual contra la sección 8.2 de la guía (matriz oficial RF-prueba-rúbrica-entregable) |
 | Limitaciones | Las fechas de "Fecha y responsable" son aproximadas (sesiones de una conversación continua); deben ajustarse a los commits reales una vez el equipo tome posesión del repositorio |
 
+## Composición del equipo
+
+David Torres se incorpora al equipo como coautor de la totalidad del
+proyecto (sin división de módulos — ver `CONTRIBUTIONS.md`) a partir
+de este punto, el inicio de la **segunda entrega** (el paquete de
+escalamiento v2: Markowitz, Black-Litterman, rebalanceo y todo lo
+posterior). Las Sesiones 1-10 de arriba (núcleo v1, primera entrega)
+fueron dirigidas únicamente por Mariana Tobón H., como registro
+honesto de lo que realmente ocurrió — no se le atribuyen
+retroactivamente a David Torres. Desde la Sesión 11 en adelante,
+ambos integrantes son coautores de cualquier cambio, se refleje o no
+el nombre de ambos en el mensaje del commit.
+
 ## Sesión 11 — Mandato v2: Markowitz, Black-Litterman y rebalanceo
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 28 sep 2026 · Mariana Tobón H |
+| Fecha y responsable | 28 sep 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Escalar del núcleo v1 (activo individual) al mandato v2 del paquete de escalamiento: optimización de portafolio N activos (GMV, tangente, óptimo personal, máximo retorno, frontera eficiente), Black-Litterman, rebalanceo con costos y caja, conexión a la interfaz, carga de tickers en bloque |
 | Prompt (resumen) | Carga del paquete v2 (guía, casos de control, fixtures sintéticos) y continuación secuencial ("sigamos", "portafolio v2") |
@@ -168,7 +181,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 28 sep 2026 · Mariana Tobón H |
+| Fecha y responsable | 28 sep 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | La estudiante probó Portafolio v2 con datos reales de Yahoo Finance y reportó Sharpe irrealmente altos (~3.8) — se diagnosticó sobreajuste de Σ muestral con pocas observaciones relativas a N activos, y se agregó shrinkage hacia la diagonal como comparación lado a lado; también se exigió un mínimo de observaciones proporcional a N (no fijo) y se aclaró que frecuencia mensual/semanal también funcionan (solo piden más rango de fechas) |
 | Prompt (resumen) | "me gustaría revisar bien... creo que no funciona bien con los datos de yahoo" + datos reales pegados por la estudiante; "me refería a mensual" (corrección sobre la solución propuesta) |
@@ -181,7 +194,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 28 sep 2026 · Mariana Tobón H |
+| Fecha y responsable | 28 sep 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Beta por covarianza/OLS, apalancamiento Hamada, CAPM con riesgo país, valoración FCFF/WACC/valor terminal (caso de control Alimentos del Norte), momentum como ayuda para formular una vista de Black-Litterman, y exportación/trazabilidad JSON del análisis de portafolio |
 | Prompt (resumen) | "agreguemos porfa calculo de betas" + foto de notas manuscritas de la estudiante con su propio cálculo de CAPM/beta |
@@ -194,7 +207,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 19 oct 2026 · Mariana Tobón H |
+| Fecha y responsable | 19 oct 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Comparación "meta de utilidad" (beta desapalancada vs. reapalancada, Ke×patrimonio); eliminar la sección de valoración completa atada al caso Alimentos del Norte por instrucción explícita de la estudiante ("eso no debe de estar ahí, es más de guía"); preset de 50 tickers reales de Yahoo Finance; limpieza de textos de UI por instrucción explícita |
 | Prompt (resumen) | "quita lo del caso alimentos del norte, eso no debe de estar ahí" · "borra esto" (dos veces, sobre captions específicos) · "podemos agregar más tickers de yahoo finance?" |
@@ -207,7 +220,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 1 nov 2026 · Mariana Tobón H |
+| Fecha y responsable | 1 nov 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Cerrar los cuatro requisitos mínimos del correo del profesor sobre la versión final: matriz de correlación en vivo (derivada de la misma Σ de Markowitz), beta frente a un índice de mercado o al portafolio óptimo calculado, valoración CAPM→patrimonio GENERALIZADA (ya no atada a un caso específico) con beta sectorial externo opcional (ej. Damodaran, ingresado a mano), y una ficha técnica consolidada por portafolio inspirada en el formato de ficha de fondos (Superfinanciera/SEC) |
 | Prompt (resumen) | "los gaps técnicos" (eligiendo entre esa opción y resolver primero identidad/nombre) |
@@ -220,7 +233,7 @@ equipo (sección 10, párrafo introductorio).
 
 | Campo | Detalle |
 |---|---|
-| Fecha y responsable | 2 nov 2026 · Mariana Tobón H |
+| Fecha y responsable | 2 nov 2026 · Mariana Tobón H. y David Torres |
 | Herramienta y modelo | Claude (Anthropic), vía Claude.ai |
 | Propósito | Adoptar el nombre, logo y tagline que diseñó la estudiante ("Botiverso — Explora. Compara. Decide."); reemplazar el ícono de emoji placeholder y el nombre "Robot Analítico TBS-EIA" como nombre de sistema (se conserva como descriptor de contexto del curso); incorporar la propuesta de valor que redactó la estudiante al README |
 | Prompt (resumen) | Carga del logo (`assets/logo_botiverso.svg`) sin texto adicional; luego "haz que se vea porfa, solo está el título" (el logo no se veía en producción) |
@@ -230,16 +243,6 @@ equipo (sección 10, párrafo introductorio).
 | Limitaciones | Ninguna adicional |
 
 ---
-
-## Composición del equipo
-
-David Torres se incorpora al equipo como coautor de la totalidad del
-proyecto (sin división de módulos — ver `CONTRIBUTIONS.md`) a partir
-de este punto. Todas las sesiones 1-16 de arriba fueron dirigidas
-únicamente por Mariana Tobón H., como registro honesto de lo que
-realmente ocurrió — no se le atribuyen retroactivamente a David Torres.
-Cualquier interacción de IA posterior a su incorporación debe
-registrarse, cuando aplique, con ambos integrantes.
 
 ## Sesión 17 — Documentación al día, personalidad/plan de crecimiento, equipo
 
