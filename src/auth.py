@@ -25,6 +25,7 @@ APP_VERSION = APP_IDENTITY.version
 ALLOWLISTED_TEST_EMAILS: set[str] = {
      "pruebarobot6@gmail.com",
      "mtobon2005@gmail.com",
+     "julian.restrepo10@eia.edu.co",  # docente — acceso de evaluación, sustentación final
 }
 
 
