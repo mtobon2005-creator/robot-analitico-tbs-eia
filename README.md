@@ -112,12 +112,25 @@ v2 completo** (365/365 pruebas pasando):
    anualizado de Markowitz — deliberadamente distinto del VaR
    log-normal por activo individual de RF-16, que depende de un
    horizonte de forecasting que Markowitz no usa.
+6. **Login con Microsoft no está operativo en producción.** El código
+   soporta ambos proveedores (`src/auth.py`, `[auth.microsoft]` en
+   `secrets.toml`) y el botón existe en la interfaz, pero no hay una
+   app real registrada en Microsoft Entra ID: el tenant institucional
+   de EIA bloquea el autorregistro de apps a cuentas de estudiante (sin
+   privilegios de administrador), y registrarla en una cuenta Microsoft
+   personal (plan alternativo, con el tipo de cuenta multiorganización)
+   tampoco se pudo completar en el tiempo disponible antes de la
+   sustentación. Mientras tanto, el acceso de evaluación del docente se
+   resuelve con la cuenta de prueba de Google ya configurada y
+   funcionando, compartida por un canal distinto a correo o
+   repositorio (cumpliendo igual el punto 63 de la guía).
 
 **Aún falta para el 100% de la rúbrica técnica:**
+- Login con Microsoft con una app real registrada en Entra ID (ver
+  limitación #6) — Google ya está verificado con cuentas reales.
 - Pruebas de integración/infraestructura restantes de la sección 8
-  (T-19 a T-25: Google/Microsoft con cuentas reales — ya verificado
-  manualmente en local; sesión con reruns/pestañas concurrentes,
-  healthcheck, accesibilidad).
+  (T-19 a T-25: sesión con reruns/pestañas concurrentes, healthcheck,
+  accesibilidad).
 - Video de defensa de máx. 5 minutos.
 - Mejoras opcionales (sección 9.1) — ninguna necesaria para 100 puntos.
 
