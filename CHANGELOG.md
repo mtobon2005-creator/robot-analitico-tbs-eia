@@ -26,8 +26,6 @@ estimaciones.
   regulatoria del Art. 3.1.1.9.3.
 - Identidad visual "Botiverso": logo, tagline "Explora. Compara.
   Decide.", propuesta de valor.
-- David Torres se incorpora al equipo (coautoría sin división de
-  módulos).
 - `docs/ficha_producto.md` y `docs/matriz_evolucion.md` para la
   sustentación final.
 - Este archivo y `.github/workflows/tests.yml` (CI).
@@ -45,6 +43,8 @@ estimaciones.
 ## [0.1.x] — 2026-09-28 a 2026-10-19 — Escalamiento v2: portafolios
 
 ### Agregado
+- David Torres se incorpora al equipo (coautoría sin división de
+  módulos) — segunda entrega.
 - Optimización de portafolio N activos: mínima varianza, tangente,
   óptimo personal, máximo retorno, frontera eficiente
   (`src/portfolio.py`).
