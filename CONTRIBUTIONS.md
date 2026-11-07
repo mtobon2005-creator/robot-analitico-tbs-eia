@@ -64,14 +64,3 @@ nuevo, se refleje o no el nombre de ambos en el mensaje del commit.
 
 ---
 
-**Nota para la defensa:** si el docente pregunta por la distribución
-real del trabajo y el equipo respondió con ayuda intensiva de IA para
-todo el código (ver `AI_USAGE.md`), la contribución individual
-verificable pasa a ser principalmente: qué módulo cada quien entendió,
-validó, y puede defender — no quién "escribió" cada línea ni quién
-aparece en más commits. Este equipo decidió, además, no dividirse el
-proyecto por módulos: ambos integrantes deben poder defender
-cualquier parte, sin excusa de "ese módulo no es el mío". Sean
-honestos sobre esto; la guía trata el uso intensivo de IA declarado
-como aceptable (sección 10), y ocultarlo sí sería falta grave (punto
-109, sección 11.1).
